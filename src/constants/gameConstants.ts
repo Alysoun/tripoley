@@ -1,0 +1,1 @@
+export const PLAYER_NAME_KEY = 'tripoley_player_name'; 
