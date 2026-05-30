@@ -1,231 +1,93 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
-import Draggable from 'react-draggable';
-
-interface PotSection {
-    label: SectionLabel;
-    position: Position;
-    chips: number;
-    cards: any[];
-}
+import { PotSection, SectionLabel } from '../types/GameTypes';
+import { LABEL_TO_POT_SECTION } from '../game/engine/animations';
+import { POT_BOARD_SIZE, potSectionAnchorPercent } from './potLabelLayout';
+import { publicAsset } from '../utils/publicAsset';
 
 interface TripoleyPotProps {
-    sections: PotSection[];
-    onSectionClick?: (section: PotSection) => void;
+  sections: PotSection[];
+  onSectionClick?: (section: PotSection) => void;
+  showAnchorMarkers?: boolean;
 }
 
-type SectionLabel = 
-  | 'Ten' 
-  | 'Jack' 
-  | 'Queen' 
-  | 'King' 
-  | 'Ace' 
-  | '8-9-10' 
-  | 'King-Queen' 
-  | 'Kitty' 
-  | 'POT';
-
-type Position = {
-    x: number;
-    y: number;
-};
-
-type GameSectionLabel = 'michigan' | 'hearts' | 'poker' | 'kitty';
-
-const SECTION_MAPPING: Record<GameSectionLabel, PotSectionLabel[]> = {
-    'michigan': ['Ten', 'Jack', 'Queen', 'POT'],
-    'hearts': ['King', 'Ace'],
-    'poker': ['8-9-10', 'King-Queen'],
-    'kitty': ['Kitty']
-};
-
-const SECTION_POSITIONS: Record<PotSectionLabel, Position> = {
-    "Ten": { x: 457, y: 317 },
-    "Jack": { x: 321, y: 456 },
-    "Queen": { x: 100, y: 448 },
-    "King": { x: -17, y: 332 },
-    "Ace": { x: -14, y: 141 },
-    "8-9-10": { x: 95, y: 21 },
-    "King-Queen": { x: 337, y: 21 },
-    "Kitty": { x: 451, y: 143 },
-    "POT": { x: 216, y: 279 }
-} as const;
-
 const PotContainer = styled.div`
-    position: relative;
-    width: 500px;
-    height: 500px;
-    margin: 0 auto;
-    margin-top: -100px;
+  position: relative;
+  width: min(48vmin, ${POT_BOARD_SIZE}px);
+  height: min(48vmin, ${POT_BOARD_SIZE}px);
+  margin: 0 auto;
+  margin-top: calc(-0.2 * min(48vmin, ${POT_BOARD_SIZE}px));
+  transform: translateZ(8px);
+  transform-style: preserve-3d;
 `;
 
 const PotImage = styled.img`
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1;
-    object-fit: contain;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  object-fit: contain;
+  pointer-events: none;
 `;
 
-const PotSection = styled.div<{ $x: number; $y: number }>`
-    position: absolute;
-    transform: translate(${props => props.$x}px, ${props => props.$y}px);
-    cursor: pointer;
-    z-index: 2;
+const PotSectionEl = styled.div<{ $left: number; $top: number }>`
+  position: absolute;
+  left: ${(p) => p.$left}%;
+  top: ${(p) => p.$top}%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  z-index: 2;
 `;
 
-const ChipCount = styled.div`
-    background-color: rgba(0, 0, 0, 0.85);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    text-align: center;
-    border: 2px solid #FFD700; // Gold border
-    font-size: 14px;
-    min-width: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
+const PotAnchor = styled.div<{ $visible?: boolean }>`
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: ${(p) => (p.$visible ? '8px' : '1px')};
+  height: ${(p) => (p.$visible ? '8px' : '1px')};
+  margin: ${(p) => (p.$visible ? '-4px 0 0 -4px' : '0')};
+  transform: translateZ(6px);
+  opacity: ${(p) => (p.$visible ? 0.75 : 0)};
+  pointer-events: none;
+  border-radius: 50%;
+  background: ${(p) => (p.$visible ? 'rgba(255, 215, 0, 0.9)' : 'transparent')};
+  border: ${(p) => (p.$visible ? '1px solid rgba(0, 0, 0, 0.55)' : 'none')};
+  box-shadow: ${(p) => (p.$visible ? '0 0 6px rgba(255, 215, 0, 0.65)' : 'none')};
 `;
 
-const ChipIcon = styled.span`
-    width: 12px;
-    height: 12px;
-    background-color: #FFD700;
-    border-radius: 50%;
-    display: inline-block;
-    margin-left: 4px;
-`;
-
-const EditorPanel = styled.div`
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background: rgba(0, 0, 0, 0.8);
-    padding: 10px;
-    color: white;
-    border-radius: 5px;
-    z-index: 1000;
-`;
-
-const EditorSection = styled.div`
-    margin: 5px 0;
-    font-size: 12px;
-`;
-
-const DraggableSection: React.FC<{
-    position: Position;
-    onDragStop: (e: any, data: { x: number; y: number }) => void;
-    onDrag: () => void;
-    children: React.ReactNode;
-}> = ({ position, onDragStop, onDrag, children }) => {
-    const nodeRef = React.useRef(null);
-    
-    return (
-        <Draggable
-            nodeRef={nodeRef}
-            position={position}
-            onStop={onDragStop}
-            onDrag={onDrag}
-        >
-            <div ref={nodeRef}>
-                {children}
-            </div>
-        </Draggable>
-    );
-};
-
-const TripoleyPot: React.FC<TripoleyPotProps & { isEditMode?: boolean }> = ({ 
-    sections, 
-    onSectionClick,
-    isEditMode = false 
+const TripoleyPot: React.FC<TripoleyPotProps> = ({
+  sections,
+  onSectionClick,
+  showAnchorMarkers = false,
 }) => {
-    const [positions, setPositions] = useState(SECTION_POSITIONS);
-    const [selectedSection, setSelectedSection] = useState<PotSectionLabel | null>(null);
+  const chipByLabel = new Map(sections.map((s) => [s.label, s.chips]));
 
-    const handleDragStop = (label: PotSectionLabel, e: any, data: { x: number, y: number }) => {
-        setPositions(prev => ({
-            ...prev,
-            [label]: { x: data.x, y: data.y }
-        }));
-    };
+  return (
+    <PotContainer>
+      <PotImage src={publicAsset('assets/pot/Pot3.png')} alt="Tripoley pot" />
+      {sections.map(({ label }) => {
+        const anchor = potSectionAnchorPercent(label as SectionLabel);
+        const chips = chipByLabel.get(label) ?? 0;
+        const potKey = LABEL_TO_POT_SECTION[label as SectionLabel];
 
-    const copyPositionsToClipboard = () => {
-        const positionsString = JSON.stringify(positions, null, 2);
-        navigator.clipboard.writeText(positionsString);
-        alert('Positions copied to clipboard!');
-    };
-
-    return (
-        <>
-            {isEditMode && (
-                <EditorPanel>
-                    <h3>Position Editor</h3>
-                    <button onClick={copyPositionsToClipboard}>
-                        Copy Positions
-                    </button>
-                    {selectedSection && (
-                        <EditorSection>
-                            Selected: {selectedSection}
-                            <br />
-                            X: {positions[selectedSection].x}
-                            <br />
-                            Y: {positions[selectedSection].y}
-                        </EditorSection>
-                    )}
-                </EditorPanel>
-            )}
-            <PotContainer>
-                <PotImage 
-                    src="/assets/pot/Pot3.png" 
-                    alt="Tripoley pot" 
-                />
-                {sections.map((section) => {
-                    const potSections = SECTION_MAPPING[section.label as GameSectionLabel];
-                    if (!potSections) return null;
-                    
-                    return potSections.map(potLabel => {
-                        const position = positions[potLabel];
-                        const content = (
-                            <ChipCount>
-                                {section.chips}
-                                <ChipIcon />
-                            </ChipCount>
-                        );
-
-                        return isEditMode ? (
-                            <DraggableSection
-                                key={potLabel}
-                                position={position}
-                                onDragStop={(e, data) => handleDragStop(potLabel, e, data)}
-                                onDrag={() => setSelectedSection(potLabel)}
-                            >
-                                <PotSection
-                                    style={{ position: 'absolute' }}
-                                    onClick={() => setSelectedSection(potLabel)}
-                                >
-                                    {content}
-                                </PotSection>
-                            </DraggableSection>
-                        ) : (
-                            <PotSection
-                                key={potLabel}
-                                $x={position.x}
-                                $y={position.y}
-                                onClick={() => onSectionClick?.(section)}
-                            >
-                                {content}
-                            </PotSection>
-                        );
-                    });
-                })}
-            </PotContainer>
-        </>
-    );
+        return (
+          <PotSectionEl key={label} $left={anchor.left} $top={anchor.top}>
+            <PotAnchor
+              $visible={showAnchorMarkers}
+              data-pot-anchor={`pot-${potKey}`}
+              data-anim-anchor={`pot-${potKey}`}
+              data-pot-section={label}
+              onClick={() =>
+                onSectionClick?.({ label, chips, position: label, cards: [] })
+              }
+            />
+          </PotSectionEl>
+        );
+      })}
+    </PotContainer>
+  );
 };
 
-export default TripoleyPot; 
+export default TripoleyPot;

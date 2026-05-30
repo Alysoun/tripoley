@@ -1,21 +1,32 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "moduleResolution": "node",
+    "module": "ESNext",
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"]
   },
   "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
-} 
+  "exclude": [
+    "src/ai/**",
+    "src/App.test.tsx",
+    "src/reportWebVitals.ts",
+    "src/react-app-env.d.ts",
+    "src/index.tsx",
+    "src/components/BettingInterface.tsx",
+    "src/components/BlindAuctionModal.tsx",
+    "src/components/DeadHand.tsx",
+    "src/components/CardAnimation.tsx",
+    "src/components/GameFeedback.tsx",
+    "src/components/DeadHandIndicator.tsx",
+    "src/components/dev/**"
+  ]
+}

@@ -1,0 +1,48 @@
+I'm building a Tripoley game with the following specifications:
+Game Rules (from CardGameHeaven):
+2-9 players (currently implementing 4 players: 1 human, 3 AI)
+Uses standard 52-card deck
+Features a special pot wheel with sections for:
+Ace of Hearts
+King of Hearts
+Queen of Hearts
+Jack of Hearts
+Ten of Hearts
+King-Queen of Hearts
+8-9-10 (any suit)
+Kitty
+Pot
+Project Structure:
+
+src/
+├── components/
+│   ├── GameUI.js        (handles game visualization)
+│   ├── PlayerHUD.js     (player's hand display)
+│   └── GameScreen.js    (main game screen)
+├── utils/
+│   └── deck.js          (deck handling and dealing)
+├── modes/               (game phases - not implemented yet)
+│   ├── Michigan.js      (Michigan Rummy phase)
+│   ├── Hearts.js        (Hearts phase)
+│   └── Poker.js         (Poker phase)
+├── Game.js              (game logic)
+└── Player.js            (player logic)
+
+
+Current Implementation Status:
+✅ Basic card dealing animation
+✅ Pot wheel display with sections
+✅ Player hands dealt and displayed
+✅ Blind hand dealt and shown
+✅ Basic UI layout
+❌ No actual game logic implemented yet
+❌ Game modes/phases not started
+❌ No player interaction beyond seeing cards
+Current Focus:
+Fixing deprecated PIXI.js code
+Improving visual layout
+Making sure pot wheel sections are properly labeled
+Ensuring proper z-indexing of elements
+Adjusting deal animation speed
+Next major step will be implementing the three different game modes (Michigan Rummy, Hearts, and Poker) that make up a complete round of Tripoley.
+Using PIXI.js v8 for rendering and GSAP for animations.

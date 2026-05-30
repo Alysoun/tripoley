@@ -1,1 +1,1 @@
-export const PLAYER_NAME_KEY = 'tripoley_player_name'; 
+export { PLAYER_NAME_KEY, DEFAULT_HUMAN_NAME, loadStoredPlayerName, saveStoredPlayerName, sanitizePlayerName, displayPlayerName } from '../utils/playerName';

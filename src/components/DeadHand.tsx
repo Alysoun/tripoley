@@ -92,7 +92,7 @@ const DeadHand: React.FC<Props> = ({ cards }) => {
     const currentPlayer = state.players[state.currentPlayer];
 
     const handleDealerDecision = (takeHand: boolean) => {
-        soundManager.play('cardMove');
+        soundManager.play('cardPlay');
         if (takeHand) {
             dispatch({ 
                 type: 'TAKE_DEAD_HAND', 

@@ -1,202 +1,149 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Player } from '../types/GameTypes';
+import { Card, Player, Rank } from '../types/GameTypes';
+import { getCardFrontPath } from '../utils/cardAssets';
+import { displayPlayerName } from '../utils/playerName';
+import { useAchievements } from '../context/AchievementContext';
+import { getSeatCoordinates, seatLabelTransform } from './seatLayout';
 
 interface PlayerPositionProps {
-    player: Player;
-    isDealer: boolean;
-    isHuman: boolean;
-    totalPlayers: number;
+  player: Player;
+  isDealer: boolean;
+  isHuman: boolean;
+  isActiveTurn: boolean;
+  totalPlayers: number;
+  lastPlayed: Card | null;
 }
 
-// Define a type for the position coordinates
-interface PositionCoord {
-    readonly left: string;
-    readonly top: string;
-}
-
-// Define valid player counts as a type
-type ValidPlayerCount = 4 | 5 | 6 | 7 | 8 | 9;
-
-// Type the POSITION_LAYOUTS object
-const POSITION_LAYOUTS: Record<ValidPlayerCount, readonly PositionCoord[]> = {
-    4: [
-        { left: '65%', top: '15%' },    // Player 1
-        { left: '75%', top: '60%' },    // Player 2 
-        { left: '25%', top: '60%' },    // Player 3
-        { left: '30%', top: '20%' }     // Player 4
-    ],
-    5: [
-        { left: '75%', top: '30%' },     // Player 1
-        { left: '70%', top: '65%' },     // Player 2
-        { left: '30%', top: '65%' },     // Player 3
-        { left: '30%', top: '20%' },     // Player 4
-        { left: '65%', top: '10%' },     // Player 5
-    ],
-    6: [
-        { left: '70%', top: '25%' },     // Player 1
-        { left: '75%', top: '50%' },     // Player 2
-        { left: '70%', top: '70%' },     // Player 3
-        { left: '25%', top: '55%' },     // Player 4
-        { left: '30%', top: '19%' },     // Player 5
-        { left: '50%', top: '10%' },     // Player 6
-    ],
-    7: [
-        { left: '70%', top: '15%' },     // Player 1
-        { left: '75%', top: '30%' },     // Player 2
-        { left: '75%', top: '55%' },     // Player 3
-        { left: '65%', top: '70%' },     // Player 4
-        { left: '28%', top: '62%' },     // Player 5
-        { left: '28.3%', top: '35.8%' },     // Player 6
-        { left: '33.7%', top: '21.5%' },     // Player 7
-    ],
-    8: [
-        { left: '70%', top: '20%' },     // Player 1
-        { left: '70%', top: '45%' },     // Player 2
-        { left: '70%', top: '70%' },     // Player 3
-        { left: '30%', top: '65%' },     // Player 4
-        { left: '25%', top: '45%' },     // Player 5
-        { left: '28.8%', top: '25%' },     // Player 6
-        { left: '40%', top: '10%' },     // Player 7
-        { left: '56.2%', top: '10%' },     // Player 8
-    ],
-    9: [
-        { left: '65%', top: '12%' },     // Player 1
-        { left: '75%', top: '23%' },     // Player 2
-        { left: '75%', top: '39%' },     // Player 3
-        { left: '75%', top: '55%' },     // Player 4
-        { left: '66.8%', top: '70.3%' },     // Player 5
-        { left: '31.8%', top: '64.7%' },     // Player 6
-        { left: '25%', top: '49%' },     // Player 7
-        { left: '25.2%', top: '30.5%' },     // Player 8
-        { left: '33%', top: '15.7%' },     // Player 9
-    ]
-} as const;
-
-const PlayerContainer = styled.div<{ $position: number; $totalPlayers: number }>`
-    position: absolute;
-    transform-origin: center center;
-    ${({ $position, $totalPlayers }) => {
-        const positions = POSITION_LAYOUTS[$totalPlayers];
-        if (!positions) return '';
-
-        const position = positions[$position];
-        if (!position) return '';
-
-        return `
-            left: ${position.left};
-            top: ${position.top};
-            transform: translate(-50%, -50%);
-            transition: all 0.3s ease-in-out;
-        `;
-    }}
+const PlayerContainer = styled.div<{ $left: string; $top: string }>`
+  position: absolute;
+  left: ${(p) => p.$left};
+  top: ${(p) => p.$top};
+  transform: ${seatLabelTransform};
+  z-index: 1;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 `;
 
-const PlayerDisplay = styled.div<{ $isHuman: boolean }>`
-    position: relative;
-    background: ${props => props.$isHuman ? 
-        'linear-gradient(to bottom, #2C3E50, #3498DB)' : 
-        'rgba(0, 0, 0, 0.8)'};
-    border: ${props => props.$isHuman ? '2px solid #FFD700' : 'none'};
-    padding: 10px;
-    border-radius: 8px;
-    color: white;
-    text-align: center;
-    min-width: 120px;
-    box-shadow: ${props => props.$isHuman ? 
-        '0 0 20px rgba(255, 215, 0, 0.5)' : 
-        '0 4px 6px rgba(0, 0, 0, 0.2)'};
-    transform: ${props => props.$isHuman ? 'scale(1.1)' : 'scale(1)'};
-    z-index: 10;
+const PlayerDisplay = styled.div<{ $isHuman: boolean; $isActive: boolean; $compact: boolean }>`
+  position: relative;
+  background: ${(p) =>
+    p.$isActive
+      ? 'linear-gradient(165deg, #4a3500 0%, #5c4a00 45%, #3d2a00 100%)'
+      : p.$isHuman
+        ? 'linear-gradient(165deg, #3d5a73 0%, #3498db 50%, #2c3e50 100%)'
+        : 'linear-gradient(165deg, #2a2a2a 0%, #111 55%, #000 100%)'};
+  border: 2px solid ${(p) => (p.$isActive ? '#ffec8b' : p.$isHuman ? '#ffd700' : 'rgba(255,255,255,0.2)')};
+  padding: ${(p) => (p.$compact ? '6px 8px' : '8px 12px')};
+  border-radius: 8px;
+  color: white;
+  text-align: center;
+  min-width: ${(p) => (p.$compact ? '82px' : '100px')};
+  box-shadow:
+    ${(p) =>
+      p.$isActive ? '0 0 16px rgba(255, 215, 0, 0.65),' : ''}
+    0 6px 14px rgba(0, 0, 0, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.08) inset;
+`;
 
-    // Add responsive sizing
-    @media (max-width: 768px) {
-        min-width: 80px;
-        padding: 8px;
-        font-size: 0.9em;
-    }
+const PlayedCard = styled.div<{ $compact: boolean }>`
+  margin-top: ${(p) => (p.$compact ? '4px' : '6px')};
 
-    @media (max-width: 480px) {
-        min-width: 60px;
-        padding: 6px;
-        font-size: 0.8em;
-    }
+  img {
+    width: ${(p) => (p.$compact ? '32px' : '40px')};
+    height: auto;
+    border-radius: 4px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    background: #fff;
+    display: block;
+  }
 `;
 
 const DealerBadge = styled.div`
-    position: absolute;
-    top: -15px;
-    right: -15px;
-    background: #FFD700;
-    color: #1a1a1a;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 14px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    border: 2px solid #FFF;
-    animation: dealerGlow 2s infinite;
-    z-index: 11;
-
-    @keyframes dealerGlow {
-        0% { box-shadow: 0 0 5px #FFD700; }
-        50% { box-shadow: 0 0 15px #FFD700; }
-        100% { box-shadow: 0 0 5px #FFD700; }
-    }
-
-    @media (max-width: 768px) {
-        width: 20px;
-        height: 20px;
-        font-size: 12px;
-        top: -10px;
-        right: -10px;
-    }
-
-    @media (max-width: 480px) {
-        width: 16px;
-        height: 16px;
-        font-size: 10px;
-        top: -8px;
-        right: -8px;
-    }
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ffd700;
+  color: #1a1a1a;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 11px;
+  border: 2px solid #fff;
 `;
 
-const PlayerPosition: React.FC<PlayerPositionProps> = ({ 
-    player, 
-    isDealer, 
-    isHuman,
-    totalPlayers 
+const ActiveDot = styled.div`
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #6f6;
+  box-shadow: 0 0 8px #6f6;
+`;
+
+const Name = styled.div<{ $compact: boolean }>`
+  font-weight: 600;
+  font-size: ${(p) => (p.$compact ? '0.78rem' : '0.88rem')};
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: ${(p) => (p.$compact ? '96px' : '130px')};
+`;
+
+const Stats = styled.div`
+  font-size: 0.75rem;
+  opacity: 0.9;
+  line-height: 1.3;
+`;
+
+const PlayerPosition: React.FC<PlayerPositionProps> = ({
+  player,
+  isDealer,
+  isHuman,
+  isActiveTurn,
+  totalPlayers,
+  lastPlayed,
 }) => {
-    // Ensure totalPlayers is a valid player count
-    const validPlayerCount = totalPlayers as ValidPlayerCount;
-    if (!(validPlayerCount in POSITION_LAYOUTS)) {
-        console.error(`Invalid player count: ${totalPlayers}`);
-        return null;
-    }
+  const { activeEffects } = useAchievements();
+  const coords = getSeatCoordinates(player.id, totalPlayers);
+  const compact = totalPlayers >= 8;
 
-    const positions = POSITION_LAYOUTS[validPlayerCount];
-    const position = positions[player.position];
-
-    return (
-        <PlayerContainer 
-            $position={player.position} 
-            $totalPlayers={totalPlayers}
-        >
-            <PlayerDisplay $isHuman={isHuman}>
-                {isDealer && <DealerBadge>D</DealerBadge>}
-                <div className="name">{player.name}</div>
-                <div className="stats">
-                    {player.chips} chips
-                    <br />
-                    {player.cards.length} cards
-                </div>
-            </PlayerDisplay>
-        </PlayerContainer>
-    );
+  return (
+    <PlayerContainer
+      $left={coords.left}
+      $top={coords.top}
+      data-anim-anchor={`player-${player.id}`}
+    >
+      <PlayerDisplay $isHuman={isHuman} $isActive={isActiveTurn} $compact={compact}>
+        {isActiveTurn && <ActiveDot title="Active turn" />}
+        {isDealer && <DealerBadge title="Dealer">D</DealerBadge>}
+        <Name $compact={compact}>{displayPlayerName(player)}</Name>
+        <Stats>
+          {player.chips <= 0 ? 'OUT' : `${player.chips} chips`}
+          {activeEffects.opponentCounts && !isHuman
+            ? ` · ${player.cards.length} cards left`
+            : ` · ${player.cards.length} cards`}
+        </Stats>
+      </PlayerDisplay>
+      {lastPlayed && (
+        <PlayedCard $compact={compact} title={`Played ${lastPlayed.value} of ${lastPlayed.suit}`}>
+          <img
+            src={getCardFrontPath(lastPlayed.suit, lastPlayed.value as Rank)}
+            alt={`${lastPlayed.value} of ${lastPlayed.suit}`}
+          />
+        </PlayedCard>
+      )}
+    </PlayerContainer>
+  );
 };
 
-export default PlayerPosition; 
+export default PlayerPosition;

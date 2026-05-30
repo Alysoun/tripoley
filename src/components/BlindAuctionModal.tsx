@@ -63,7 +63,7 @@ export const BlindAuctionModal: React.FC<BlindAuctionModalProps> = ({ onClose, i
     const [currentBid, setCurrentBid] = useState(0);
     const player = state.players.find(p => p.isHuman);
 
-    const handleDealerChoice = (choice: 'swap' | 'auction' | 'keep') => {
+    const handleDealerChoice = (choice: 'swap' | 'auction') => {
         dispatch({ type: 'DEALER_BLIND_CHOICE', choice });
         soundManager.play('chipMove');
         onClose();
@@ -101,11 +101,6 @@ export const BlindAuctionModal: React.FC<BlindAuctionModalProps> = ({ onClose, i
                                 onClick={() => handleDealerChoice('auction')}
                             >
                                 Auction Hand
-                            </ActionButton>
-                            <ActionButton 
-                                onClick={() => handleDealerChoice('keep')}
-                            >
-                                Keep Current Hand
                             </ActionButton>
                         </div>
                     </>

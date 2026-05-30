@@ -1,45 +1,38 @@
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useGame } from '../context/GameContext';
 import { soundManager } from '../utils/SoundEffects';
-import { Card, Position } from '../types/GameTypes';
+import { Card } from '../types/GameTypes';
 
 export function useGameEffects() {
-    const { state, dispatch } = useGame();
+  const { state, dispatch } = useGame();
 
-    const playCard = useCallback((card: Card, startPos: Position, endPos: Position) => {
-        const animationId = Math.random().toString(36);
-        
-        // Play sound
-        soundManager.play('cardPlay');
+  const showFeedback = useCallback(
+    (message: string, type: 'success' | 'error' | 'info') => {
+      dispatch({ type: 'SHOW_FEEDBACK', message, feedbackType: type });
+    },
+    [dispatch]
+  );
 
-        // Add animation
-        dispatch({
-            type: 'ADD_ANIMATION',
-            animation: {
-                id: animationId,
-                card,
-                startPos,
-                endPos,
-                duration: 500,
-                onComplete: () => {
-                    dispatch({ type: 'REMOVE_ANIMATION', id: animationId });
-                }
-            }
-        });
-    }, [dispatch]);
+  const toggleSound = useCallback(() => {
+    void soundManager.unlock().then((ready) => {
+      const next = !state.soundEnabled;
+      soundManager.setEnabled(next);
+      dispatch({ type: 'TOGGLE_SOUND' });
+      if (next && ready) soundManager.play('buttonClick');
+    });
+  }, [dispatch, state.soundEnabled]);
 
-    const showFeedback = useCallback((message: string, type: 'success' | 'error' | 'info') => {
-        dispatch({ type: 'SHOW_FEEDBACK', message, type });
-    }, [dispatch]);
+  const playCard = useCallback(
+    (_card: Card, _startPos: { x: number; y: number; rotation: number }, _endPos: { x: number; y: number; rotation: number }) => {
+      soundManager.play('cardPlay');
+    },
+    []
+  );
 
-    const toggleSound = useCallback(() => {
-        dispatch({ type: 'TOGGLE_SOUND' });
-    }, [dispatch]);
-
-    return {
-        playCard,
-        showFeedback,
-        toggleSound,
-        isSoundEnabled: state.soundEnabled
-    };
-} 
+  return {
+    playCard,
+    showFeedback,
+    toggleSound,
+    isSoundEnabled: state.soundEnabled,
+  };
+}

@@ -1,10 +1,11 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 
 interface ChipProps {
     value: number;
     size?: 'small' | 'medium' | 'large';
     onClick?: () => void;
+    sparkle?: boolean;
 }
 
 // Color schemes for different chip values
@@ -19,7 +20,55 @@ const CHIP_COLORS = {
     1000: { primary: '#C0C0C0', secondary: '#808080', accent: '#000000' }
 };
 
-const ChipContainer = styled.div<{ size: string; $colors: typeof CHIP_COLORS[keyof typeof CHIP_COLORS] }>`
+const sparkleSpin = keyframes`
+  from { transform: rotate(0deg); opacity: 0.35; }
+  50% { opacity: 0.85; }
+  to { transform: rotate(360deg); opacity: 0.35; }
+`;
+
+const sparkleRing = css`
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 0deg,
+      transparent,
+      rgba(255, 255, 200, 0.9),
+      transparent,
+      rgba(255, 215, 0, 0.75),
+      transparent
+    );
+    animation: ${sparkleSpin} 2.4s linear infinite;
+    pointer-events: none;
+    z-index: 2;
+  }
+`;
+
+const edgePattern = css`
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background: repeating-conic-gradient(
+      from 0deg,
+      transparent 0deg 20deg,
+      rgba(255, 255, 255, 0.1) 20deg 40deg
+    );
+    mask: radial-gradient(
+      circle at center,
+      transparent 60%,
+      black 60% 100%
+    );
+  }
+`;
+
+const ChipContainer = styled.div<{ size: string; $colors: typeof CHIP_COLORS[keyof typeof CHIP_COLORS]; $sparkle?: boolean }>`
     position: relative;
     width: ${props => ({
         small: '30px',
@@ -43,26 +92,7 @@ const ChipContainer = styled.div<{ size: string; $colors: typeof CHIP_COLORS[key
         ${props => props.$colors.secondary} 100%
     );
 
-    /* Edge pattern */
-    &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        border-radius: 50%;
-        background: repeating-conic-gradient(
-            from 0deg,
-            transparent 0deg 20deg,
-            rgba(255, 255, 255, 0.1) 20deg 40deg
-        );
-        mask: radial-gradient(
-            circle at center,
-            transparent 60%,
-            black 60% 100%
-        );
-    }
+    ${(p) => (p.$sparkle ? sparkleRing : edgePattern)}
 
     /* Inner pattern */
     &::after {
@@ -116,11 +146,11 @@ const ChipValue = styled.div<{ size: string; color: string }>`
     z-index: 1;
 `;
 
-const Chip: React.FC<ChipProps> = ({ value, size = 'medium', onClick }) => {
+const Chip: React.FC<ChipProps> = ({ value, size = 'medium', onClick, sparkle = false }) => {
     const colors = CHIP_COLORS[value as keyof typeof CHIP_COLORS] || CHIP_COLORS[1];
 
     return (
-        <ChipContainer size={size} $colors={colors} onClick={onClick}>
+        <ChipContainer size={size} $colors={colors} $sparkle={sparkle} onClick={onClick}>
             <ChipValue size={size} color={colors.accent}>
                 {value}
             </ChipValue>
@@ -128,4 +158,4 @@ const Chip: React.FC<ChipProps> = ({ value, size = 'medium', onClick }) => {
     );
 };
 
-export default Chip; 
+export default Chip;

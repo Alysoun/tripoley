@@ -2,6 +2,8 @@ import styled from 'styled-components';
 import { GlobalStyle } from './styles/GlobalStyle';
 import GameTable from './components/GameTable';
 import { GameProvider } from './context/GameContext';
+import { AchievementProvider } from './context/AchievementContext';
+import AchievementToast from './components/AchievementToast';
 
 const AppContainer = styled.div`
   width: 100vw;
@@ -12,12 +14,15 @@ const AppContainer = styled.div`
 
 function App() {
   return (
-    <GameProvider>
-      <AppContainer>
-        <GlobalStyle />
-        <GameTable />
-      </AppContainer>
-    </GameProvider>
+    <AchievementProvider>
+      <GameProvider>
+        <AppContainer>
+          <GlobalStyle />
+          <GameTable />
+          <AchievementToast />
+        </AppContainer>
+      </GameProvider>
+    </AchievementProvider>
   );
 }
 
