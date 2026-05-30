@@ -83,7 +83,7 @@ export const HOUSE_RULE_TOGGLES: {
   {
     key: 'michiganLeadPassPenalty',
     label: 'Michigan lead pass penalty',
-    hint: 'Pay 1 to POT when you cannot lead the required black/red card.',
+    hint: 'Pay 1 to the Kitty when you cannot lead the required black/red card.',
   },
   {
     key: 'michiganRemainingCardPenalty',

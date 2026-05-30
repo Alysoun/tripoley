@@ -2,7 +2,7 @@ export const MIN_PLAYERS = 4;
 export const MAX_PLAYERS = 9;
 export const STARTING_CHIPS = 200;
 export const ANTE_PER_SECTION = 1;
-export const MICHIGAN_POT_PENALTY = 1;
+export const MICHIGAN_KITTY_PENALTY = 1;
 export const MICHIGAN_PENALTY_PER_CARD = 1;
 /** Human decision window — blind auction, poker, Michigan, dealer blind, etc. */
 export const PLAYER_ACTION_TURN_MS = 15_000;

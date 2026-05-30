@@ -1,6 +1,6 @@
 import {
   ANTE_PER_SECTION,
-  MICHIGAN_POT_PENALTY,
+  MICHIGAN_KITTY_PENALTY,
   MICHIGAN_PENALTY_PER_CARD,
   POT_SECTION_KEYS,
   STARTING_CHIPS,
@@ -1028,17 +1028,17 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
       const penalize = state.houseRules.michiganLeadPassPenalty;
       const players = state.players.map((p, i) =>
         i === player.id && penalize
-          ? { ...p, chips: p.chips - MICHIGAN_POT_PENALTY }
+          ? { ...p, chips: p.chips - MICHIGAN_KITTY_PENALTY }
           : p
       );
       const pot = clonePot(state.pot);
-      if (penalize) pot.pot += MICHIGAN_POT_PENALTY;
+      if (penalize) pot.kitty += MICHIGAN_KITTY_PENALTY;
 
       const nextName = state.players[nextPlayer]
         ? logPlayerName(state.players[nextPlayer])
         : 'Player';
       const penaltyMsg = penalize
-        ? `pays ${MICHIGAN_POT_PENALTY} to pot; `
+        ? `pays ${MICHIGAN_KITTY_PENALTY} to kitty; `
         : '';
       let next = appendLog(
         {
@@ -1061,7 +1061,7 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
         )
       );
       if (penalize) {
-        next = chipFromHumanOrPlayerToPot(next, player, 'pot', 1);
+        next = chipFromHumanOrPlayerToPot(next, player, 'kitty', 1);
       }
       return next;
     }

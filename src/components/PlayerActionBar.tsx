@@ -282,7 +282,7 @@ const PlayerActionBar: React.FC = () => {
             $variant="danger"
             onClick={() => dispatch({ type: 'MICHIGAN_PASS_LEAD' })}
           >
-            Cannot lead {leadColorLabel(state.michigan.leadColor)} — pay 1 to pot
+            Cannot lead {leadColorLabel(state.michigan.leadColor)} — pay 1 to kitty
           </Btn>
         )}
 

@@ -242,7 +242,7 @@ export function describeMichiganTurn(
     if (lowest) {
       return `Play your lowest ${leadColorLabel(michigan.leadColor)}: ${formatCardLabel(lowest)}`;
     }
-    return `Cannot lead ${leadColorLabel(michigan.leadColor)} — pay 1 chip to the pot`;
+    return `Cannot lead ${leadColorLabel(michigan.leadColor)} — pay 1 chip to the kitty`;
   }
 
   if (michigan.mode === 'follow' && michigan.activeSuit && michigan.nextValue) {

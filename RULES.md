@@ -19,7 +19,7 @@ Choose a preset when starting a game, or switch to **Custom** and toggle individ
 | **Pay cards on Michigan play** | Ace–Ten Hearts, K-Q pair, and 8-9-10 pay out when played in Michigan | Pay out automatically at start of Pay Cards if held |
 | **Dead hand blocks pay cards** | Matching cards in the blind hand prevent that section from paying | Dead hand ignored for pay-card claims |
 | **Michigan sequence timer** | 15s to play the next card in a suit; expiry treats it as in the dead hand | No countdown |
-| **Michigan lead pass penalty** | Cannot lead required black/red → pay 1 to POT and pass left | No chip penalty for passing lead |
+| **Michigan lead pass penalty** | Cannot lead required black/red → pay 1 to **Kitty** and pass left | No chip penalty for passing lead |
 | **Penalty for leftover cards** | Losers pay Kitty winner 1 chip per card still in hand | No end-of-Michigan chip penalty |
 | **Dealer "Keep" blind option** | Explicit **Keep Hand** button on dealer blind choice | Swap or Auction only (auction still keeps your hand if no one buys) |
 
@@ -96,10 +96,10 @@ Under **Home table** rules (*Pay cards on Michigan play*), nothing is claimed he
 
 - Players pick up their **full original hand** again
 - **Player left of the dealer** opens by playing their **lowest black card** (clubs or spades)
-- If they have no black cards *(when lead pass penalty is on)*, they pay **1 chip to the POT** and the obligation passes **left** to the next player, who tries their lowest black card
+- If they have no black cards *(when lead pass penalty is on)*, they pay **1 chip to the Kitty** and the obligation passes **left** to the next player, who tries their lowest black card
 - After a lead, whoever holds the **next consecutive card in that suit** plays next (not necessarily clockwise)
 - When no one can follow the sequence (next card missing — often in the dead hand), the **same player who played last** must lead their **lowest red card** (hearts or diamonds)
-- If they cannot lead red *(when lead pass penalty is on)*, they pay **1 chip to the POT** and the obligation passes **left** for the next player’s lowest red
+- If they cannot lead red *(when lead pass penalty is on)*, they pay **1 chip to the Kitty** and the obligation passes **left** for the next player’s lowest red
 - After a red sequence stops, the same player leads **lowest black** again (colors alternate on each break)
 - First player to empty their hand wins the **Kitty**
 - *(When leftover-card penalty is on)* everyone else pays the winner **1 chip per card left**
