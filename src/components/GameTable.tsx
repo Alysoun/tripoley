@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useGame } from '../context/GameContext';
 import { validateMichiganPlay } from '../game/engine/michigan';
@@ -21,6 +21,8 @@ import { potBoardToDisplaySections } from '../game/engine/reducer';
 import PlayerPosition from './PlayerPosition';
 import { TABLE_BOTTOM_INSET } from './hudLayout';
 import { HudLayoutProvider, useHudLayout } from '../context/HudLayoutContext';
+import { DEBUG, isDebugActive } from '../debugConfig';
+import { rulesFromPreset, defaultHouseRules } from '../game/engine/houseRules';
 
 import type { FeltColor } from '../game/achievements/types';
 
@@ -184,6 +186,7 @@ const GameTableContent: React.FC = () => {
   useAITurn();
   useAchievementTracking();
   const [playDropActive, setPlayDropActive] = useState(false);
+  const debugAutoStarted = useRef(false);
 
   useEffect(() => {
     const resetPlayDrop = () => setPlayDropActive(false);
@@ -192,6 +195,21 @@ const GameTableContent: React.FC = () => {
   }, []);
 
   const isGameStarted = state.players.length > 0;
+
+  useEffect(() => {
+    if (debugAutoStarted.current || isGameStarted) return;
+    const auto = isDebugActive() ? DEBUG.autoStart : null;
+    if (!auto?.enabled) return;
+
+    debugAutoStarted.current = true;
+    const seats: SeatConfig[] = Array.from({ length: auto.playerCount }, (_, i) => ({
+      isHuman: auto.humanSeats.includes(i),
+    }));
+    const houseRules = auto.houseRulesPreset
+      ? rulesFromPreset(auto.houseRulesPreset)
+      : defaultHouseRules();
+    dispatch(startGameAction(seats, houseRules));
+  }, [dispatch, isGameStarted, startGameAction]);
 
   const handleTableDragOver = useCallback(
     (e: React.DragEvent) => {

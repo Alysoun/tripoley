@@ -11,6 +11,7 @@ import { isDealerInAuction } from './blindAuction';
 import { canPassLead } from './michigan';
 import { handHasPayCard } from './payCards';
 import { isEliminated } from './playerStatus';
+import { debugPlayerActionTurnMs } from '../../debugConfig';
 
 export function countHumanPlayers(state: GameState): number {
   return state.players.filter((p) => p.isHuman).length;
@@ -27,7 +28,7 @@ export function isRoundEndContinueTimer(state: GameState): boolean {
 }
 
 export function getPlayerActionTimerMs(_state: GameState): number {
-  return PLAYER_ACTION_TURN_MS;
+  return debugPlayerActionTurnMs(PLAYER_ACTION_TURN_MS);
 }
 
 /** Michigan follow-sequence uses MICHIGAN_TIMER_EXPIRE instead of ACTION_TIMER_EXPIRE. */

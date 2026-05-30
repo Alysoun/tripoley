@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useGame } from '../context/GameContext';
+import { debugAiTurnDelayMs } from '../debugConfig';
 import { getLegalMichiganPlays, canPassLead } from '../game/engine/michigan';
 import { GameState } from '../types/GameTypes';
 
@@ -88,7 +89,7 @@ export function useAITurn() {
 
     const timer = window.setTimeout(() => {
       dispatchAI();
-    }, 700);
+    }, debugAiTurnDelayMs(700));
 
     return () => window.clearTimeout(timer);
   }, [

@@ -95,6 +95,9 @@ public/assets/cards
 # Old GitHub web-upload build output at repo root (use public/ + npm run build)
 /assets
 
+# Local dev overrides (copy src/debug.example.ts → src/debug.ts)
+src/debug.ts
+
 # Gatsby files
 .cache/
 # Comment in the public line in if your project uses Gatsby and not Next.js

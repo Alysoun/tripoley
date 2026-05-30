@@ -4,6 +4,7 @@ import { gameReducer, initialGameState } from '../game/engine/reducer';
 import { finalizePlayerStatus } from '../game/engine/playerStatus';
 import { getAIAction } from '../game/engine/ai';
 import { clearGameSession, loadGameSession, saveGameSession } from '../game/sessionStorage';
+import { debugLogActions } from '../debugConfig';
 
 function initGameState(): GameState {
   const loaded = loadGameSession();
@@ -18,8 +19,15 @@ const GameContext = createContext<{
 } | undefined>(undefined);
 
 export function GameProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(gameReducer, undefined, initGameState);
+  const [state, rawDispatch] = useReducer(gameReducer, undefined, initGameState);
   const stateRef = useRef(state);
+
+  const dispatch = useCallback((action: GameAction) => {
+    if (debugLogActions()) {
+      console.debug('[tripoley dispatch]', action);
+    }
+    rawDispatch(action);
+  }, []);
 
   useEffect(() => {
     stateRef.current = state;

@@ -13,6 +13,37 @@ npm run dev
 
 Open the URL Vite prints (with `/tripoley/` path). Card SVGs are synced into `public/assets/cards` automatically before dev/build.
 
+## Automated testing
+
+You cannot manually play every combination (player counts × deals × actions is astronomical). The test suite instead:
+
+- **Unit tests** — poker hands, pay-card claims, Michigan legality, blind auction, dealing
+- **Simulation tests** — all-AI full rounds for **2–9 players** under **official** and **home table** rules
+- **Invariants** — total chips conserved, no duplicate cards, no stuck phases
+- **Seeded RNG** — reproducible runs (`mockRandom(seed)` in tests)
+
+```bash
+npm test              # full suite (~1s locally)
+npm run test:watch    # re-run on file changes
+npm run test:sim      # simulation / stress tests only
+```
+
+Tests live in `src/game/engine/__tests__/`. CI runs `npm test` before every GitHub Pages deploy.
+
+To stress-test more seeds locally, duplicate the loop in `simulation.test.ts` or raise `maxRounds` in `simulateGame()`.
+
+## Local debug overrides (dev only)
+
+Copy the example file and edit freely — it stays on your machine:
+
+```bash
+copy src\debug.example.ts src\debug.ts
+```
+
+Set `enabled: true` and uncomment options in `src/debug.ts`. Reload the dev server after edits. In the browser console you can also tweak live via `__TRIPOLEY_DEBUG__` (e.g. `__TRIPOLEY_DEBUG__.startingChips = 999` before dealing).
+
+`src/debug.ts` is gitignored; production builds ignore it unless the file exists locally.
+
 ## Production build
 
 ```bash

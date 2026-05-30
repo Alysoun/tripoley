@@ -16,6 +16,8 @@ import {
   loadStoredPlayerName,
   saveStoredPlayerName,
   sanitizePlayerName,
+  formatPlayerNameInput,
+  DEFAULT_HUMAN_NAME,
   displayPlayerName,
 } from '../utils/playerName';
 import { useAchievements } from '../context/AchievementContext';
@@ -294,17 +296,28 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
           <div style={{ textAlign: 'left' }}>
             <Label htmlFor="player-name">Your name</Label>
             <NameHint>
-              Shown at the table as {displayPlayerName({ name: humanName, isHuman: true })}
+              Shown at the table as{' '}
+              {displayPlayerName({
+                name: humanName.trim() || DEFAULT_HUMAN_NAME,
+                isHuman: true,
+              })}
             </NameHint>
           </div>
           <NameInput
             id="player-name"
             value={humanName}
             onChange={(e) => {
-              const next = sanitizePlayerName(e.target.value);
+              const next = formatPlayerNameInput(e.target.value);
               setHumanName(next);
               setSeats((prev) =>
                 prev.map((s) => (s.isHuman ? { ...s, name: next } : s))
+              );
+            }}
+            onBlur={() => {
+              const final = sanitizePlayerName(humanName);
+              setHumanName(final);
+              setSeats((prev) =>
+                prev.map((s) => (s.isHuman ? { ...s, name: final } : s))
               );
             }}
             placeholder="Enter your name"

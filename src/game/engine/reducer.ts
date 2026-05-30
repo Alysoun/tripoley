@@ -64,6 +64,7 @@ import {
   chipFromPotToPlayer,
   dealAnimationsForRound,
 } from './animations';
+import { debugStartingChips } from '../../debugConfig';
 
 let logCounter = 0;
 
@@ -690,7 +691,7 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
           ? sanitizePlayerName(seat.name || DEFAULT_HUMAN_NAME)
           : seat.name || generateName(),
         isHuman: seat.isHuman,
-        chips: STARTING_CHIPS,
+        chips: debugStartingChips(STARTING_CHIPS),
         cards: dealt[i],
         originalHand: [...dealt[i]],
         aiDifficulty: seat.isHuman ? undefined : 'medium',

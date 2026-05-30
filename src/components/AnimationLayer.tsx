@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useMemo, useState } from 'react';
+import React, { useLayoutEffect, useEffect, useMemo, useState } from 'react';
 import { motion, type Transition } from 'framer-motion';
 import styled from 'styled-components';
 import { useGame } from '../context/GameContext';
@@ -8,6 +8,7 @@ import { getCardFrontPath, getCardBackPath } from '../utils/cardAssets';
 import { anchorCenter, potSectionFromAnchor } from '../utils/animationAnchors';
 import { pulsePotSection } from '../game/engine/animations';
 import { soundManager } from '../utils/SoundEffects';
+import { debugSkipAnimations } from '../debugConfig';
 
 const Layer = styled.div`
   position: fixed;
@@ -249,6 +250,16 @@ const AnimItem: React.FC<AnimItemProps> = ({
 const AnimationLayer: React.FC = () => {
   const { state, dispatch } = useGame();
   const { activeEffects } = useAchievements();
+  const skipAnimations = debugSkipAnimations();
+
+  useEffect(() => {
+    if (!skipAnimations) return;
+    for (const anim of state.animations) {
+      dispatch({ type: 'REMOVE_ANIMATION', id: anim.id });
+    }
+  }, [skipAnimations, state.animations, dispatch]);
+
+  if (skipAnimations) return null;
 
   return (
     <Layer aria-hidden>
