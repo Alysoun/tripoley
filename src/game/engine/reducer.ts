@@ -913,17 +913,17 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
           state.houseRules
         );
         pot = claimResult.pot;
-        if (claimResult.claim) {
+        for (const claim of claimResult.claims) {
           players = players.map((p) =>
-            p.id === player.id ? { ...p, chips: p.chips + claimResult.claim!.amount } : p
+            p.id === player.id ? { ...p, chips: p.chips + claim.amount } : p
           );
-          payCardClaims = [...payCardClaims, claimResult.claim];
-          next = appendLog(next, log(claimResult.claim.description, 'success'));
+          payCardClaims = [...payCardClaims, claim];
+          next = appendLog(next, log(claim.description, 'success'));
           next = chipFromPotToPlayer(
             next,
-            claimResult.claim.section,
+            claim.section,
             player.id,
-            Math.min(claimResult.claim.amount, 6)
+            Math.min(claim.amount, 6)
           );
         }
       }

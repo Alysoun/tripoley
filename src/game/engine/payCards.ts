@@ -183,9 +183,10 @@ export function resolvePayCardClaimOnPlay(
   playerId: number,
   playerName: string,
   rules: Pick<HouseRules, 'deadHandBlocksPayCards'>
-): { pot: PotBoard; claim: PayCardClaim | null } {
+): { pot: PotBoard; claims: PayCardClaim[] } {
   const blocked = rules.deadHandBlocksPayCards;
   const newPot = clonePot(pot);
+  const claims: PayCardClaim[] = [];
 
   const heartMap: Record<string, { section: PotSectionKey; label: string }> = {
     A: { section: 'aceHearts', label: 'Ace of Hearts' },
@@ -204,15 +205,12 @@ export function resolvePayCardClaimOnPlay(
     ) {
       const amount = newPot[entry.section];
       newPot[entry.section] = 0;
-      return {
-        pot: newPot,
-        claim: {
-          playerId,
-          section: entry.section,
-          amount,
-          description: `${playerName} claims ${entry.label} by playing it (${amount} chips)`,
-        },
-      };
+      claims.push({
+        playerId,
+        section: entry.section,
+        amount,
+        description: `${playerName} claims ${entry.label} by playing it (${amount} chips)`,
+      });
     }
   }
 
@@ -223,19 +221,17 @@ export function resolvePayCardClaimOnPlay(
         !cardInDeadHand(deadHand, 'hearts', 'Q'))) &&
     hasHeart(handBeforePlay, 'K') &&
     hasHeart(handBeforePlay, 'Q') &&
-    (playedCard.suit === 'hearts' && (playedCard.value === 'K' || playedCard.value === 'Q'))
+    playedCard.suit === 'hearts' &&
+    (playedCard.value === 'K' || playedCard.value === 'Q')
   ) {
     const amount = newPot.kingQueen;
     newPot.kingQueen = 0;
-    return {
-      pot: newPot,
-      claim: {
-        playerId,
-        section: 'kingQueen',
-        amount,
-        description: `${playerName} claims King-Queen of Hearts by playing (${amount} chips)`,
-      },
-    };
+    claims.push({
+      playerId,
+      section: 'kingQueen',
+      amount,
+      description: `${playerName} claims King-Queen of Hearts by playing (${amount} chips)`,
+    });
   }
 
   if (
@@ -250,19 +246,16 @@ export function resolvePayCardClaimOnPlay(
     ) {
       const amount = newPot.eightNineTen;
       newPot.eightNineTen = 0;
-      return {
-        pot: newPot,
-        claim: {
-          playerId,
-          section: 'eightNineTen',
-          amount,
-          description: `${playerName} claims 8-9-10 of ${suit} by playing (${amount} chips)`,
-        },
-      };
+      claims.push({
+        playerId,
+        section: 'eightNineTen',
+        amount,
+        description: `${playerName} claims 8-9-10 of ${suit} by playing (${amount} chips)`,
+      });
     }
   }
 
-  return { pot: newPot, claim: null };
+  return { pot: newPot, claims };
 }
 
 export function collectAntes(pot: PotBoard, playerCount: number): PotBoard {
