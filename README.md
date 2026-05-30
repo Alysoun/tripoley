@@ -22,9 +22,11 @@ npm run preview
 
 ## Deploy to GitHub Pages
 
-Pushes to `main` run [.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml), which builds and publishes `dist/`.
+Pushes to `main` run [.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml), which builds and publishes `dist/`. A normal run finishes in under two minutes.
 
 After the first successful run, enable **GitHub Pages → Source: GitHub Actions** in the repository settings if it is not already active.
+
+If a workflow run shows **no logs for several minutes**, the job is usually **waiting for a GitHub runner** (not building yet). Use **Cancel workflow** once; if it stays stuck, ignore that run and open the **latest** run instead, or use **Actions → Deploy to GitHub Pages → Run workflow**. Check [GitHub Status](https://www.githubstatus.com/) if runs keep queueing.
 
 If the live site shows a blank page or a console 404 for `/src/main.tsx`, Pages is serving the **source repo** instead of the built `dist/` folder. Open **Settings → Pages → Build and deployment**, set **Source** to **GitHub Actions** (not “Deploy from a branch”), then re-run the **Deploy to GitHub Pages** workflow from the Actions tab.
 
