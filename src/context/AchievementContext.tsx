@@ -68,6 +68,8 @@ import {
 
   saveAchievementData,
 
+  resetAchievementProgress,
+
 } from '../game/achievements/storage';
 
 import {
@@ -153,6 +155,8 @@ interface AchievementContextValue {
   consumeAdrenalineFreeze: () => void;
 
   trackGameQuit: (state: GameState) => void;
+
+  resetAllProgress: () => void;
 
 }
 
@@ -503,6 +507,18 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
     [data, persist]
 
   );
+
+
+
+  const resetAllProgress = useCallback(() => {
+
+    const fresh = resetAchievementProgress();
+
+    setData(fresh);
+
+    setPendingUnlocks([]);
+
+  }, []);
 
 
 
@@ -885,6 +901,8 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
     consumeAdrenalineFreeze,
 
     trackGameQuit,
+
+    resetAllProgress,
 
   };
 

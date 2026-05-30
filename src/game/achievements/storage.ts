@@ -151,6 +151,20 @@ export function saveAchievementData(data: AchievementSaveData): void {
 
 
 
+/** Wipe stats and unlocks so achievements can be earned again. Keeps nothing. */
+
+export function resetAchievementProgress(): AchievementSaveData {
+
+  const fresh = defaultSaveData();
+
+  saveAchievementData(fresh);
+
+  return fresh;
+
+}
+
+
+
 export function isUnlocked(data: AchievementSaveData, id: AchievementId): boolean {
 
   return data.achievements[id]?.unlockedAt != null;

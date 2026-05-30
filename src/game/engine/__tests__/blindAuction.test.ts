@@ -16,7 +16,7 @@ describe('blind auction', () => {
   });
 
   it('detects when only the high bidder remains', () => {
-    let state = startGame(3, OFFICIAL_HOUSE_RULES);
+    let state = startGame(4, OFFICIAL_HOUSE_RULES);
     state = dispatch(state, { type: 'DEALER_BLIND_CHOICE', choice: 'auction' });
     state = {
       ...state,
@@ -24,7 +24,7 @@ describe('blind auction', () => {
         ...state.blindAuction,
         highBidder: 1,
         highBid: 5,
-        passed: { 2: true },
+        passed: { 2: true, 3: true },
       },
       currentPlayer: 1,
     };
@@ -33,13 +33,13 @@ describe('blind auction', () => {
   });
 
   it('detects when every bidder passed', () => {
-    let state = startGame(3, OFFICIAL_HOUSE_RULES);
+    let state = startGame(4, OFFICIAL_HOUSE_RULES);
     state = dispatch(state, { type: 'DEALER_BLIND_CHOICE', choice: 'auction' });
     state = {
       ...state,
       blindAuction: {
         ...state.blindAuction,
-        passed: { 1: true, 2: true },
+        passed: { 1: true, 2: true, 3: true },
       },
     };
     expect(allBiddersPassed(state)).toBe(true);

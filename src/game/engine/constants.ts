@@ -1,4 +1,4 @@
-export const MIN_PLAYERS = 2;
+export const MIN_PLAYERS = 4;
 export const MAX_PLAYERS = 9;
 export const STARTING_CHIPS = 200;
 export const ANTE_PER_SECTION = 1;

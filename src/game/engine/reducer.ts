@@ -4,8 +4,10 @@ import {
   MICHIGAN_PENALTY_PER_CARD,
   POT_SECTION_KEYS,
   STARTING_CHIPS,
+  MIN_PLAYERS,
+  MAX_PLAYERS,
 } from './constants';
-import { dealHands } from './cards';
+import { dealHands, dealHandsFiltered } from './cards';
 import { createEmptyPot, resolvePayCardClaims, resolvePayCardClaimOnPlay, clonePot, handHasPayCard, describePayCardsHeld } from './payCards';
 import { defaultHouseRules, summarizeHouseRules } from './houseRules';
 import {
@@ -682,6 +684,7 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
     case 'START_GAME': {
       const seats = action.seats;
       const playerCount = seats.length;
+      if (playerCount < MIN_PLAYERS || playerCount > MAX_PLAYERS) return state;
       const dealerId = 0;
       const soloHuman = seats.filter((s) => s.isHuman).length === 1;
       const { players: dealt, deadHand } = dealHands(playerCount, dealerId);
@@ -1112,13 +1115,19 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
 
     case 'START_NEW_ROUND': {
       const playerCount = state.players.length;
-      if (inGamePlayers(state).length <= 1) return state;
+      const active = inGamePlayers(state);
+      if (active.length <= 1) return state;
       const newDealerId = nextInGameDealer(state);
-      const { players: dealt, deadHand } = dealHands(playerCount, newDealerId);
+      const activeSeatIds = active.map((p) => p.id);
+      const { playerHands, deadHand } = dealHandsFiltered(
+        playerCount,
+        activeSeatIds,
+        newDealerId
+      );
       const players = state.players.map((p, i) => ({
         ...p,
-        cards: isEliminated(p) ? [] : dealt[i],
-        originalHand: isEliminated(p) ? [] : [...dealt[i]],
+        cards: isEliminated(p) ? [] : playerHands[i],
+        originalHand: isEliminated(p) ? [] : [...playerHands[i]],
       }));
       let next: GameState = {
         ...state,

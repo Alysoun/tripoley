@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useAchievements } from '../context/AchievementContext';
 import { ACHIEVEMENT_DEFINITIONS } from '../game/achievements/definitions';
@@ -183,6 +183,59 @@ const CloseBtn = styled.button`
   }
 `;
 
+const ResetSection = styled.div`
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const ResetHint = styled.p`
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: #aaa;
+  line-height: 1.45;
+`;
+
+const ResetBtn = styled.button`
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 120, 120, 0.45);
+  border-radius: 8px;
+  background: rgba(120, 20, 20, 0.35);
+  color: #ffb4b4;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(140, 30, 30, 0.5);
+  }
+`;
+
+const ConfirmRow = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const ConfirmBtn = styled.button`
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+`;
+
+const CancelConfirmBtn = styled(ConfirmBtn)`
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ddd;
+`;
+
+const YesResetBtn = styled(ConfirmBtn)`
+  border: none;
+  background: #c0392b;
+  color: white;
+`;
+
 const CATEGORY_LABELS: Record<AchievementCategory, string> = {
   time: 'Time',
   cosmetic: 'Cosmetic',
@@ -209,7 +262,11 @@ const AchievementsPanel: React.FC<AchievementsPanelProps> = ({ onClose }) => {
     setFeltColor,
     setVictoryFanfare,
     togglePreference,
+    resetAllProgress,
   } = useAchievements();
+
+  const [confirmReset, setConfirmReset] = useState(false);
+  const allUnlocked = unlockedCount === ACHIEVEMENT_DEFINITIONS.length;
 
   const feltUnlocked = FELT_OPTIONS.some(
     (opt) => !opt.unlockId || data.achievements[opt.unlockId]?.unlockedAt != null
@@ -319,6 +376,38 @@ const AchievementsPanel: React.FC<AchievementsPanelProps> = ({ onClose }) => {
             );
           })}
         </List>
+
+        <ResetSection>
+          {allUnlocked ? (
+            <ResetHint>
+              You have unlocked everything. Reset progress to earn achievements again from scratch.
+            </ResetHint>
+          ) : (
+            <ResetHint>
+              Reset clears all achievement progress, stats, and cosmetic unlocks.
+            </ResetHint>
+          )}
+          {confirmReset ? (
+            <ConfirmRow>
+              <CancelConfirmBtn type="button" onClick={() => setConfirmReset(false)}>
+                Cancel
+              </CancelConfirmBtn>
+              <YesResetBtn
+                type="button"
+                onClick={() => {
+                  resetAllProgress();
+                  setConfirmReset(false);
+                }}
+              >
+                Yes, reset all
+              </YesResetBtn>
+            </ConfirmRow>
+          ) : (
+            <ResetBtn type="button" onClick={() => setConfirmReset(true)}>
+              Reset achievements
+            </ResetBtn>
+          )}
+        </ResetSection>
 
         <CloseBtn type="button" onClick={onClose}>
           Close

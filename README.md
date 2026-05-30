@@ -18,7 +18,7 @@ Open the URL Vite prints (with `/tripoley/` path). Card SVGs are synced into `pu
 You cannot manually play every combination (player counts × deals × actions is astronomical). The test suite instead:
 
 - **Unit tests** — poker hands, pay-card claims, Michigan legality, blind auction, dealing
-- **Simulation tests** — all-AI full rounds for **2–9 players** under **official** and **home table** rules
+- **Simulation tests** — all-AI full rounds for **4–9 players** under **official** and **home table** rules
 - **Invariants** — total chips conserved, no duplicate cards, no stuck phases
 - **Seeded RNG** — reproducible runs (`mockRandom(seed)` in tests)
 

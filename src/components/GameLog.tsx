@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-import Draggable from 'react-draggable';
+import Draggable, { DraggableData } from 'react-draggable';
 import { useGame } from '../context/GameContext';
 
 const STORAGE_KEY = 'tripoley-game-log-layout';
@@ -13,21 +13,50 @@ type LogLayout = {
   collapsed: boolean;
 };
 
-const DEFAULT_LAYOUT: LogLayout = {
-  x: 16,
-  y: Math.max(100, window.innerHeight - 360),
-  width: 220,
-  height: 130,
-  collapsed: false,
-};
+function defaultLayout(): LogLayout {
+  return {
+    x: 16,
+    y: Math.max(100, window.innerHeight - 360),
+    width: 220,
+    height: 130,
+    collapsed: false,
+  };
+}
+
+function clampLayout(layout: LogLayout): LogLayout {
+  const maxX = Math.max(0, window.innerWidth - Math.min(layout.width, 360) - 8);
+  const maxY = Math.max(0, window.innerHeight - 48);
+  return {
+    ...layout,
+    x: Math.min(Math.max(0, layout.x), maxX),
+    y: Math.min(Math.max(0, layout.y), maxY),
+    width: Math.min(Math.max(180, layout.width), 360),
+    height: Math.min(Math.max(90, layout.height), 280),
+  };
+}
 
 function loadLayout(): LogLayout {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_LAYOUT;
-    return { ...DEFAULT_LAYOUT, ...JSON.parse(raw) };
+    if (!raw) return clampLayout(defaultLayout());
+    const parsed = JSON.parse(raw) as Partial<LogLayout>;
+    return clampLayout({
+      x: typeof parsed.x === 'number' ? parsed.x : 16,
+      y: typeof parsed.y === 'number' ? parsed.y : defaultLayout().y,
+      width: typeof parsed.width === 'number' ? parsed.width : 220,
+      height: typeof parsed.height === 'number' ? parsed.height : 130,
+      collapsed: Boolean(parsed.collapsed),
+    });
   } catch {
-    return DEFAULT_LAYOUT;
+    return clampLayout(defaultLayout());
+  }
+}
+
+function saveLayout(layout: LogLayout): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(layout));
+  } catch {
+    /* private mode / quota */
   }
 }
 
@@ -107,21 +136,52 @@ const Entry = styled.div<{ $type: string }>`
 const GameLog: React.FC = () => {
   const { state } = useGame();
   const nodeRef = useRef<HTMLDivElement>(null);
-  const [layout, setLayout] = useState<LogLayout>(loadLayout);
+  const layoutRef = useRef<LogLayout>(loadLayout());
+  const saveTimerRef = useRef<number | null>(null);
+  const [layout, setLayout] = useState<LogLayout>(() => layoutRef.current);
+
+  const persistLayout = useCallback((next: LogLayout) => {
+    const clamped = clampLayout(next);
+    layoutRef.current = clamped;
+    setLayout(clamped);
+    if (saveTimerRef.current !== null) {
+      window.clearTimeout(saveTimerRef.current);
+    }
+    saveTimerRef.current = window.setTimeout(() => {
+      saveLayout(clamped);
+      saveTimerRef.current = null;
+    }, 120);
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(layout));
-  }, [layout]);
+    return () => {
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current);
+        saveLayout(layoutRef.current);
+      }
+    };
+  }, []);
+
+  const onDrag = useCallback(
+    (_: unknown, data: DraggableData) => {
+      persistLayout({ ...layoutRef.current, x: data.x, y: data.y });
+    },
+    [persistLayout]
+  );
 
   const onResize = useCallback(() => {
     const el = nodeRef.current;
-    if (!el || layout.collapsed) return;
-    setLayout((prev) => ({
-      ...prev,
-      width: el.offsetWidth,
-      height: el.offsetHeight,
-    }));
-  }, [layout.collapsed]);
+    if (!el || layoutRef.current.collapsed) return;
+    const width = el.offsetWidth;
+    const height = el.offsetHeight;
+    if (
+      width === layoutRef.current.width &&
+      height === layoutRef.current.height
+    ) {
+      return;
+    }
+    persistLayout({ ...layoutRef.current, width, height });
+  }, [persistLayout]);
 
   useEffect(() => {
     const el = nodeRef.current;
@@ -131,14 +191,15 @@ const GameLog: React.FC = () => {
     return () => observer.disconnect();
   }, [onResize]);
 
-  if (state.phase === 'setup' || state.log.length === 0) return null;
+  if (state.phase === 'setup') return null;
 
   return (
     <Draggable
       nodeRef={nodeRef}
       handle=".log-drag-handle"
       position={{ x: layout.x, y: layout.y }}
-      onStop={(_, data) => setLayout((prev) => ({ ...prev, x: data.x, y: data.y }))}
+      onDrag={onDrag}
+      onStop={onDrag}
     >
       <LogPanel
         ref={nodeRef}
@@ -151,7 +212,12 @@ const GameLog: React.FC = () => {
           <span>Game Log</span>
           <CollapseBtn
             type="button"
-            onClick={() => setLayout((prev) => ({ ...prev, collapsed: !prev.collapsed }))}
+            onClick={() =>
+              persistLayout({
+                ...layoutRef.current,
+                collapsed: !layoutRef.current.collapsed,
+              })
+            }
           >
             {layout.collapsed ? '▸' : '▾'}
           </CollapseBtn>

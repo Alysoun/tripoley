@@ -1,4 +1,5 @@
 import { Rank, Suit, Card } from '../../types/GameTypes';
+import { MIN_PLAYERS } from './constants';
 
 export const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
 export const RANKS: Rank[] = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -95,4 +96,28 @@ export function dealHands(playerCount: number, dealerId: number): {
   }
 
   return { players: hands, deadHand };
+}
+
+/** Deal a full table layout, but only active seats receive cards (eliminated seats stay empty). */
+export function dealHandsFiltered(
+  totalSeats: number,
+  activeSeatIds: number[],
+  dealerSeatId: number
+): { playerHands: Card[][]; deadHand: Card[] } {
+  const empty = Array.from({ length: totalSeats }, () => [] as Card[]);
+  if (activeSeatIds.length === 0) {
+    return { playerHands: empty, deadHand: [] };
+  }
+
+  const dealerAmongActive = Math.max(0, activeSeatIds.indexOf(dealerSeatId));
+  const dealCount = Math.max(activeSeatIds.length, MIN_PLAYERS);
+  const { players: virtualHands, deadHand } = dealHands(dealCount, dealerAmongActive);
+  const playerHands = empty.map((hand) => [...hand]);
+  activeSeatIds.forEach((seatId, i) => {
+    playerHands[seatId] = virtualHands[i];
+  });
+  const phantomHands = virtualHands.slice(activeSeatIds.length);
+  const mergedDeadHand =
+    phantomHands.length > 0 ? [...deadHand, ...phantomHands.flat()] : deadHand;
+  return { playerHands, deadHand: mergedDeadHand };
 }

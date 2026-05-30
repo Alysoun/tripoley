@@ -27,7 +27,7 @@ The game log shows which rules are active when a round starts.
 
 ## Players
 
-- **2–9 players** at the table
+- **4–9 players** at the table (fewer than four makes hands too large)
 - Each seat is **Human** (hot-seat) or **AI**
 - At least one human required in the default setup
 
