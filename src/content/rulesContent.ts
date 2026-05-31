@@ -15,7 +15,7 @@ export type RulesSection = {
 export const RULES_OVERVIEW: RulesSection = {
   title: 'Round overview',
   lines: [
-    'Each player antes 1 chip on every board section (Hearts Ace–Ten, King-Queen pair, 8-9-10, Kitty, and POT).',
+    'Each active player antes 1 chip per board section they can afford (Ace through POT, in order). Short stacks skip later sections and cannot claim pots they did not ante into.',
     'All 52 cards are dealt to players plus one face-down dead (blind) hand. Extra cards go to players left of the dealer.',
     'Phases run in order: dealer blind choice → Pay Cards → Poker → Michigan Rummy. Dealer rotates left each round.',
     'Each player starts with 200 chips.',

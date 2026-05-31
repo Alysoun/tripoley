@@ -21,6 +21,8 @@ export interface Player {
   aiDifficulty?: AIDifficulty;
   /** Original dealt hand — restored before Michigan */
   originalHand: Card[];
+  /** Board sections this player anted into for the current round (short pot if broke). */
+  anteSections?: PotSectionKey[];
 }
 
 export type GamePhase =

@@ -69,6 +69,13 @@ import {
   dealAnimationsForRound,
 } from './animations';
 import { debugStartingChips } from '../../debugConfig';
+import {
+  ANTE_SECTION_COUNT,
+  applyAnteToPot,
+  distributePlayerAnte,
+  FULL_ANTE_TOTAL,
+  playerEligibleForSectionFromPlayer,
+} from './antes';
 import { michiganRecoveryActions } from './michiganRecovery';
 
 let logCounter = 0;
@@ -221,16 +228,21 @@ function applyChipDelta(players: Player[], deltas: number[]): Player[] {
 }
 
 function collectAntesFromPlayers(state: GameState): GameState {
-  const anteTotal = ANTE_PER_SECTION * POT_SECTION_KEYS.length;
   const active = inGamePlayers(state);
   let players = [...state.players];
   let pot = clonePot(state.pot);
+  const logLines: string[] = [];
 
   for (const p of active) {
-    const pay = Math.min(p.chips, anteTotal);
-    players = players.map((x) => (x.id === p.id ? { ...x, chips: x.chips - pay } : x));
-    for (const key of POT_SECTION_KEYS) {
-      pot[key] += ANTE_PER_SECTION;
+    const { sections, chipsSpent } = distributePlayerAnte(p.chips);
+    players = players.map((x) =>
+      x.id === p.id ? { ...x, chips: x.chips - chipsSpent, anteSections: sections } : x
+    );
+    applyAnteToPot(pot, sections);
+    if (chipsSpent < FULL_ANTE_TOTAL) {
+      logLines.push(
+        `${logPlayerName(p)} antes ${chipsSpent} chip${chipsSpent === 1 ? '' : 's'} (${sections.length}/${ANTE_SECTION_COUNT} sections — short stack)`
+      );
     }
   }
 
@@ -238,13 +250,22 @@ function collectAntesFromPlayers(state: GameState): GameState {
     { ...state, players, pot },
     log(
       active.length > 0
-        ? `Each active player antes up to ${anteTotal} chips across the board`
+        ? logLines.length > 0
+          ? logLines.join('; ')
+          : `Each active player antes ${FULL_ANTE_TOTAL} chips across the board`
         : 'No active players remain to ante',
       'info'
     )
   );
   for (const p of active) {
-    next = chipFromHumanOrPlayerToPot(next, p, 'pot', 2);
+    const sections = players.find((x) => x.id === p.id)?.anteSections ?? [];
+    const animSection = sections.includes('pot') ? 'pot' : sections[sections.length - 1] ?? 'pot';
+    next = chipFromHumanOrPlayerToPot(
+      next,
+      players.find((x) => x.id === p.id) ?? p,
+      animSection,
+      Math.min(Math.max(sections.length, 1), 6)
+    );
   }
   return next;
 }
@@ -263,7 +284,8 @@ function startPayCardsPhase(state: GameState): GameState {
     hands,
     state.deadHand,
     state.pot,
-    state.houseRules
+    state.houseRules,
+    state.players.map((p) => p.anteSections)
   );
   let next: GameState = {
     ...state,
@@ -355,12 +377,17 @@ function resolvePokerShowdown(state: GameState): GameState {
   }
 
   const potAmount = state.pot.pot;
-  const share = Math.floor(potAmount / winners.length);
+  const eligibleWinners = winners.filter((id) =>
+    playerEligibleForSectionFromPlayer(state.players[id], 'pot')
+  );
+  const payoutWinners = eligibleWinners.length > 0 ? eligibleWinners : [];
+  const share =
+    payoutWinners.length > 0 ? Math.floor(potAmount / payoutWinners.length) : 0;
   const players = state.players.map((p) =>
-    winners.includes(p.id) ? { ...p, chips: p.chips + share } : p
+    payoutWinners.includes(p.id) ? { ...p, chips: p.chips + share } : p
   );
   let pot = clonePot(state.pot);
-  pot.pot = potAmount - share * winners.length;
+  pot.pot = potAmount - share * payoutWinners.length;
 
   let next = appendLog(
     {
@@ -375,8 +402,10 @@ function resolvePokerShowdown(state: GameState): GameState {
       },
     },
     log(
-      `Poker: ${winners.map((w) => logPlayerName(state.players[w])).join(', ')} win ${share} with ${bestEval.label}`,
-      'success'
+      payoutWinners.length > 0
+        ? `Poker: ${payoutWinners.map((w) => logPlayerName(state.players[w])).join(', ')} win ${share} with ${bestEval.label}`
+        : `Poker: ${winners.map((w) => logPlayerName(state.players[w])).join(', ')} had best hand but did not ante the POT — chips stay on the board`,
+      payoutWinners.length > 0 ? 'success' : 'info'
     )
   );
 
@@ -386,13 +415,21 @@ function resolvePokerShowdown(state: GameState): GameState {
 
   if (contenders.length === 1 && foldedCount === state.players.length - 1) {
     lines.push(
-      `${winnerNames[0]} wins ${share} chip${share === 1 ? '' : 's'} — all other players folded.`
+      payoutWinners.length > 0
+        ? `${winnerNames[0]} wins ${share} chip${share === 1 ? '' : 's'} — all other players folded.`
+        : `${winnerNames[0]} wins by fold but did not ante the POT — chips remain.`
     );
   } else if (winners.length === 1) {
-    lines.push(`${winnerNames[0]} wins ${share} chips with a ${bestEval.label}.`);
+    lines.push(
+      payoutWinners.length > 0
+        ? `${winnerNames[0]} wins ${share} chips with a ${bestEval.label}.`
+        : `${winnerNames[0]} had a ${bestEval.label} but did not ante the POT — chips remain.`
+    );
   } else {
     lines.push(
-      `${winnerNames.join(' and ')} split the pot — ${share} chips each with a ${bestEval.label}.`
+      payoutWinners.length > 0
+        ? `${payoutWinners.map((w) => logPlayerName(state.players[w])).join(' and ')} split the pot — ${share} chips each with a ${bestEval.label}.`
+        : `Best hand (${bestEval.label}) but no winner anted the POT — chips remain.`
     );
   }
   if (potAmount > 0) {
@@ -400,7 +437,7 @@ function resolvePokerShowdown(state: GameState): GameState {
   }
 
   return showAnnouncement(
-    winners.reduce(
+    payoutWinners.reduce(
       (s, w) => chipFromPotToPlayer(s, 'pot', w, Math.max(share, 3)),
       next
     ),
@@ -468,7 +505,10 @@ function startMichiganPhase(state: GameState): GameState {
 }
 
 function finishMichigan(state: GameState, winnerId: number): GameState {
-  const kittyAmount = state.pot.kitty;
+  const winner = state.players[winnerId];
+  const kittyEligible = playerEligibleForSectionFromPlayer(winner, 'kitty');
+  const kittyAmount = kittyEligible ? state.pot.kitty : 0;
+  const kittyLeftover = kittyEligible ? 0 : state.pot.kitty;
   const penalize = state.houseRules.michiganRemainingCardPenalty;
   const penaltyIncome = penalize
     ? state.players
@@ -484,7 +524,7 @@ function finishMichigan(state: GameState, winnerId: number): GameState {
   });
 
   let pot = clonePot(state.pot);
-  pot.kitty = 0;
+  pot.kitty = kittyLeftover;
 
   let next: GameState = {
     ...state,
@@ -494,7 +534,9 @@ function finishMichigan(state: GameState, winnerId: number): GameState {
   };
   const winnerName = logPlayerName(state.players[winnerId]);
   const lines = [
-    `${winnerName} emptied their hand and wins the Kitty (${kittyAmount} chips).`,
+    kittyEligible
+      ? `${winnerName} emptied their hand and wins the Kitty (${kittyAmount} chips).`
+      : `${winnerName} emptied their hand but did not ante the Kitty — ${kittyLeftover} chip${kittyLeftover === 1 ? '' : 's'} stay on the board.`,
   ];
   if (penaltyIncome > 0) {
     lines.push(
@@ -519,7 +561,9 @@ function finishMichigan(state: GameState, winnerId: number): GameState {
   });
 
   return showAnnouncement(
-    chipFromPotToPlayer(next, 'kitty', winnerId, Math.max(kittyAmount, 4)),
+    kittyEligible
+      ? chipFromPotToPlayer(next, 'kitty', winnerId, Math.max(kittyAmount, 4))
+      : next,
     {
       title: 'Michigan Rummy — Winner',
       lines,
@@ -957,7 +1001,8 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
           pot,
           player.id,
           logPlayerName(player),
-          state.houseRules
+          state.houseRules,
+          player.anteSections
         );
         pot = claimResult.pot;
         for (const claim of claimResult.claims) {

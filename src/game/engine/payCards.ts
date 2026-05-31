@@ -2,6 +2,7 @@ import { ANTE_PER_SECTION, PotSectionKey } from './constants';
 import { Card, Suit } from '../../types/GameTypes';
 import { hasCard } from './cards';
 import type { HouseRules } from './houseRules';
+import { playerEligibleForSection } from './antes';
 export type PotBoard = Record<PotSectionKey, number>;
 
 export function createEmptyPot(): PotBoard {
@@ -94,7 +95,8 @@ export function resolvePayCardClaims(
   playerHands: Card[][],
   deadHand: Card[],
   pot: PotBoard,
-  rules: Pick<HouseRules, 'deadHandBlocksPayCards'> = { deadHandBlocksPayCards: true }
+  rules: Pick<HouseRules, 'deadHandBlocksPayCards'> = { deadHandBlocksPayCards: true },
+  anteSectionsByPlayer?: (PotSectionKey[] | undefined)[]
 ): { pot: PotBoard; claims: PayCardClaim[]; playerChipDeltas: number[] } {
   const newPot = clonePot(pot);
   const claims: PayCardClaim[] = [];
@@ -114,6 +116,7 @@ export function resolvePayCardClaims(
     if (amount <= 0) continue;
 
     for (let i = 0; i < playerHands.length; i++) {
+      if (!playerEligibleForSection(anteSectionsByPlayer?.[i], section)) continue;
       if (hasHeart(playerHands[i], value)) {
         playerChipDeltas[i] += amount;
         newPot[section] = 0;
@@ -135,6 +138,7 @@ export function resolvePayCardClaims(
     newPot.kingQueen > 0
   ) {
     for (let i = 0; i < playerHands.length; i++) {
+      if (!playerEligibleForSection(anteSectionsByPlayer?.[i], 'kingQueen')) continue;
       if (hasHeart(playerHands[i], 'K') && hasHeart(playerHands[i], 'Q')) {
         const amount = newPot.kingQueen;
         playerChipDeltas[i] += amount;
@@ -155,6 +159,7 @@ export function resolvePayCardClaims(
     newPot.eightNineTen > 0
   ) {
     for (let i = 0; i < playerHands.length; i++) {
+      if (!playerEligibleForSection(anteSectionsByPlayer?.[i], 'eightNineTen')) continue;
       const suit = hasEightNineTenRun(playerHands[i]);
       if (suit) {
         const amount = newPot.eightNineTen;
@@ -182,7 +187,8 @@ export function resolvePayCardClaimOnPlay(
   pot: PotBoard,
   playerId: number,
   playerName: string,
-  rules: Pick<HouseRules, 'deadHandBlocksPayCards'>
+  rules: Pick<HouseRules, 'deadHandBlocksPayCards'>,
+  anteSections?: PotSectionKey[]
 ): { pot: PotBoard; claims: PayCardClaim[] } {
   const blocked = rules.deadHandBlocksPayCards;
   const newPot = clonePot(pot);
@@ -201,6 +207,7 @@ export function resolvePayCardClaimOnPlay(
     if (
       entry &&
       newPot[entry.section] > 0 &&
+      playerEligibleForSection(anteSections, entry.section) &&
       (!blocked || !cardInDeadHand(deadHand, 'hearts', playedCard.value))
     ) {
       const amount = newPot[entry.section];
@@ -216,6 +223,7 @@ export function resolvePayCardClaimOnPlay(
 
   if (
     newPot.kingQueen > 0 &&
+    playerEligibleForSection(anteSections, 'kingQueen') &&
     (!blocked ||
       (!cardInDeadHand(deadHand, 'hearts', 'K') &&
         !cardInDeadHand(deadHand, 'hearts', 'Q'))) &&
@@ -236,6 +244,7 @@ export function resolvePayCardClaimOnPlay(
 
   if (
     newPot.eightNineTen > 0 &&
+    playerEligibleForSection(anteSections, 'eightNineTen') &&
     (!blocked || !eightNineTenBlocked(deadHand))
   ) {
     const suit = hasEightNineTenRun(handBeforePlay);
