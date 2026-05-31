@@ -6,10 +6,15 @@ import {
   LAYOUT_EDIT_GROUP_HINTS,
   LAYOUT_EDIT_GROUP_LABELS,
   LAYOUT_EDIT_GROUP_ORDER,
+  MAX_GAME_LOG_WIDTH,
   MAX_HAND_SCALE,
   MAX_SEAT_LABEL_SCALE,
+  MIN_GAME_LOG_WIDTH,
   MIN_HAND_SCALE,
   MIN_SEAT_LABEL_SCALE,
+  maxGameLogHeight,
+  maxGameLogWidth,
+  minGameLogHeight,
 } from './hudPanelLayout';
 
 const Backdrop = styled.div`
@@ -89,8 +94,17 @@ const ScaleControl = styled.label`
 
 const LayoutEditOverlay: React.FC = () => {
   const { state } = useGame();
-  const { layoutEditMode, layoutEditGroup, setLayoutEditGroup, seatLabelScale, setSeatLabelScale, handScale, setHandScale } =
-    useHudLayout();
+  const {
+    layoutEditMode,
+    layoutEditGroup,
+    setLayoutEditGroup,
+    seatLabelScale,
+    setSeatLabelScale,
+    handScale,
+    setHandScale,
+    gameLogLayout,
+    setGameLogLayout,
+  } = useHudLayout();
 
   if (!layoutEditMode || !state.isSoloSession) return null;
 
@@ -144,6 +158,36 @@ const LayoutEditOverlay: React.FC = () => {
             />
             {Math.round(seatLabelScale * 100)}%
           </ScaleControl>
+        )}
+        {layoutEditGroup === 'log' && (
+          <>
+            <ScaleControl>
+              Log width
+              <input
+                type="range"
+                min={MIN_GAME_LOG_WIDTH}
+                max={maxGameLogWidth(true)}
+                step={4}
+                value={gameLogLayout.width}
+                onChange={(e) => setGameLogLayout({ width: Number(e.target.value) })}
+                aria-label="Game log width"
+              />
+              {gameLogLayout.width}px
+            </ScaleControl>
+            <ScaleControl>
+              Log height
+              <input
+                type="range"
+                min={minGameLogHeight(true, false)}
+                max={maxGameLogHeight(true)}
+                step={4}
+                value={gameLogLayout.height}
+                onChange={(e) => setGameLogLayout({ height: Number(e.target.value) })}
+                aria-label="Game log height"
+              />
+              {gameLogLayout.height}px
+            </ScaleControl>
+          </>
         )}
       </Banner>
     </>

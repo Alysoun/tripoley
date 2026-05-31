@@ -1,4 +1,11 @@
 import { SectionLabel } from '../types/GameTypes';
+import {
+  clampGameLogLayout,
+  clearLegacyGameLogLayout,
+  defaultGameLogLayout,
+  GameLogLayout,
+  loadLegacyGameLogLayout,
+} from './gameLogLayout';
 import { POT_SECTION_POSITIONS } from './potLabelLayout';
 
 export type HudPanelId = 'hand' | 'info' | 'actions';
@@ -16,7 +23,7 @@ export const LAYOUT_EDIT_GROUP_LABELS: Record<LayoutEditGroup, string> = {
 
 export const LAYOUT_EDIT_GROUP_HINTS: Record<LayoutEditGroup, string> = {
   hud: 'Drag panel handles to reposition. Use the hand size slider below (easier on touch than the corner grip).',
-  log: 'Drag the log anywhere on screen. Use the width and height sliders in the log header.',
+  log: 'Drag the log anywhere on screen. Use the width and height sliders below.',
   opponents: 'Drag opponent name labels within the blue box around each seat.',
   pot: 'Drag pot chip labels within the dashed range around each gold anchor.',
 };
@@ -36,10 +43,22 @@ export type SeatLabelOffsets = Record<number, SeatLabelOffset>;
 export type StoredHudLayout = {
   panels: HudLayout;
   handScale: number;
+  gameLog?: GameLogLayout;
   potLabelOffsets?: PotLabelOffsets;
   seatLabelScale?: number;
   seatLabelOffsets?: SeatLabelOffsets;
 };
+
+export type { GameLogLayout };
+export {
+  clampGameLogLayout,
+  defaultGameLogLayout,
+  gameLogDragBounds,
+  maxGameLogHeight,
+  maxGameLogWidth,
+  minGameLogHeight,
+  prepareGameLogForEditing,
+} from './gameLogLayout';
 
 export type PotLabelOffset = { dx: number; dy: number };
 export type PotLabelOffsets = Record<SectionLabel, PotLabelOffset>;
@@ -288,6 +307,7 @@ export function defaultStoredHudLayout(): StoredHudLayout {
   return {
     panels: defaultHudLayout(),
     handScale: defaultHandScaleForViewport(),
+    gameLog: defaultGameLogLayout(),
     potLabelOffsets: defaultPotLabelOffsets(),
     seatLabelScale: defaultSeatLabelScaleForViewport(),
     seatLabelOffsets: defaultSeatLabelOffsets(),
@@ -315,11 +335,19 @@ export function loadStoredHudLayout(): StoredHudLayout {
     const parsed = JSON.parse(raw) as Partial<StoredHudLayout> & Partial<HudLayout>;
 
     if (parsed.panels && isPanelPosition(parsed.panels.hand)) {
+      const gameLog =
+        parsed.gameLog && typeof parsed.gameLog === 'object'
+          ? clampGameLogLayout({ ...defaultGameLogLayout(), ...parsed.gameLog })
+          : loadLegacyGameLogLayout() ?? defaultGameLogLayout();
+      if (!parsed.gameLog && loadLegacyGameLogLayout()) {
+        clearLegacyGameLogLayout();
+      }
       return {
         panels: clampHudLayout({ ...defaultHudLayout(), ...parsed.panels }),
         handScale: clampHandScale(
           typeof parsed.handScale === 'number' ? parsed.handScale : defaultHandScaleForViewport()
         ),
+        gameLog,
         potLabelOffsets: {
           ...defaultPotLabelOffsets(),
           ...(parsed.potLabelOffsets ?? {}),
@@ -340,6 +368,7 @@ export function loadStoredHudLayout(): StoredHudLayout {
       return {
         panels: clampHudLayout({ ...defaultHudLayout(), ...parsed }),
         handScale: DEFAULT_HAND_SCALE,
+        gameLog: loadLegacyGameLogLayout() ?? defaultGameLogLayout(),
         potLabelOffsets: defaultPotLabelOffsets(),
         seatLabelScale: DEFAULT_SEAT_LABEL_SCALE,
         seatLabelOffsets: defaultSeatLabelOffsets(),

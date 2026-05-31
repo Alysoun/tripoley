@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import {
   clearStoredHudLayout,
+  clampGameLogLayout,
   clampHandScale,
   clampHudLayout,
   clampPanelPosition,
@@ -15,10 +16,12 @@ import {
   clampSeatLabelOffset,
   clampSeatLabelScale,
   DEFAULT_LAYOUT_EDIT_GROUP,
+  defaultGameLogLayout,
   defaultPotLabelOffsets,
   defaultSeatLabelOffsets,
   defaultStoredHudLayout,
   DEFAULT_SEAT_LABEL_SCALE,
+  GameLogLayout,
   HUD_PANEL_Z_BASE,
   HudLayout,
   HudPanelId,
@@ -27,6 +30,7 @@ import {
   PanelPosition,
   PotLabelOffset,
   PotLabelOffsets,
+  prepareGameLogForEditing,
   saveStoredHudLayout,
   SeatLabelOffset,
   SeatLabelOffsets,
@@ -36,6 +40,7 @@ import { SectionLabel } from '../types/GameTypes';
 type HudLayoutContextValue = {
   layout: HudLayout;
   handScale: number;
+  gameLogLayout: GameLogLayout;
   potLabelOffsets: PotLabelOffsets;
   seatLabelScale: number;
   seatLabelOffsets: SeatLabelOffsets;
@@ -46,6 +51,7 @@ type HudLayoutContextValue = {
   isEditingLayoutGroup: (group: LayoutEditGroup) => boolean;
   toggleLayoutEditMode: () => void;
   setPanelPosition: (id: HudPanelId, position: PanelPosition) => void;
+  setGameLogLayout: (patch: Partial<GameLogLayout>) => void;
   setPotLabelOffset: (label: SectionLabel, offset: PotLabelOffset) => void;
   setSeatLabelScale: (scale: number) => void;
   setSeatLabelOffset: (seatIndex: number, offset: SeatLabelOffset) => void;
@@ -69,6 +75,7 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const layout = stored.panels;
   const handScale = stored.handScale;
+  const gameLogLayout = stored.gameLog ?? defaultGameLogLayout();
   const potLabelOffsets = stored.potLabelOffsets ?? defaultPotLabelOffsets();
   const seatLabelScale = stored.seatLabelScale ?? DEFAULT_SEAT_LABEL_SCALE;
   const seatLabelOffsets = stored.seatLabelOffsets ?? defaultSeatLabelOffsets();
@@ -77,6 +84,16 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     (group: LayoutEditGroup) => layoutEditMode && layoutEditGroup === group,
     [layoutEditMode, layoutEditGroup]
   );
+
+  const setLayoutEditGroupWithPrep = useCallback((group: LayoutEditGroup) => {
+    setLayoutEditGroup(group);
+    if (group === 'log') {
+      setStored((prev) => ({
+        ...prev,
+        gameLog: prepareGameLogForEditing(prev.gameLog ?? defaultGameLogLayout()),
+      }));
+    }
+  }, []);
 
   const setLayoutEditMode = useCallback((enabled: boolean) => {
     setLayoutEditModeState(enabled);
@@ -110,6 +127,10 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           editing: layoutEditMode,
           handScale: prev.handScale,
         }),
+        gameLog: clampGameLogLayout(
+          prev.gameLog ?? defaultGameLogLayout(),
+          layoutEditMode && layoutEditGroup === 'log'
+        ),
       }));
     };
     window.addEventListener('resize', onResize);
@@ -118,7 +139,20 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       window.removeEventListener('resize', onResize);
       window.removeEventListener('orientationchange', onResize);
     };
-  }, [layoutEditMode]);
+  }, [layoutEditMode, layoutEditGroup]);
+
+  const setGameLogLayout = useCallback(
+    (patch: Partial<GameLogLayout>) => {
+      setStored((prev) => ({
+        ...prev,
+        gameLog: clampGameLogLayout(
+          { ...(prev.gameLog ?? defaultGameLogLayout()), ...patch },
+          layoutEditMode && layoutEditGroup === 'log'
+        ),
+      }));
+    },
+    [layoutEditMode, layoutEditGroup]
+  );
 
   const setPotLabelOffset = useCallback((label: SectionLabel, offset: PotLabelOffset) => {
     setStored((prev) => ({
@@ -176,16 +210,18 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     () => ({
       layout,
       handScale,
+      gameLogLayout,
       potLabelOffsets,
       seatLabelScale,
       seatLabelOffsets,
       layoutEditMode,
       layoutEditGroup,
       setLayoutEditMode,
-      setLayoutEditGroup,
+      setLayoutEditGroup: setLayoutEditGroupWithPrep,
       isEditingLayoutGroup,
       toggleLayoutEditMode,
       setPanelPosition,
+      setGameLogLayout,
       setPotLabelOffset,
       setSeatLabelScale,
       setSeatLabelOffset,
@@ -197,13 +233,16 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [
       layout,
       handScale,
+      gameLogLayout,
       potLabelOffsets,
       seatLabelScale,
       seatLabelOffsets,
       layoutEditMode,
       layoutEditGroup,
       isEditingLayoutGroup,
+      setLayoutEditGroupWithPrep,
       setPanelPosition,
+      setGameLogLayout,
       setPotLabelOffset,
       setSeatLabelScale,
       setSeatLabelOffset,
