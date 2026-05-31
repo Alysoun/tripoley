@@ -144,6 +144,9 @@ interface AchievementContextValue {
 
   trackStateTransition: (prev: GameState, next: GameState) => void;
 
+  /** Keep solo perk effects in sync when a session is restored from storage. */
+  syncSessionFromState: (state: GameState) => void;
+
   setFeltColor: (color: FeltColor) => void;
 
   setVictoryFanfare: (variant: VictoryFanfareVariant) => void;
@@ -311,17 +314,18 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
 
 
   const resetSession = useCallback(() => {
-
     lastRoundNumber.current = 0;
-
     sessionRoundCount.current = 0;
-
     roundFlags.current = emptyRound();
-
     adrenalineFreezeMs.current = 0;
-
     sequenceTimerOffForGame.current = false;
+  }, []);
 
+  const syncSessionFromState = useCallback((state: GameState) => {
+    setSoloSessionActive(!!state.isSoloSession);
+    if (state.players.length > 0 && state.phase !== 'setup') {
+      sequenceTimerOffForGame.current = !state.houseRules.michiganSequenceTimer;
+    }
   }, []);
 
 
@@ -889,6 +893,8 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
     unlockedCount,
 
     trackStateTransition,
+
+    syncSessionFromState,
 
     setFeltColor,
 

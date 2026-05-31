@@ -5,8 +5,12 @@ import { useAchievements } from '../context/AchievementContext';
 /** Observes game state and updates lifetime achievement progress (solo only). */
 export function useAchievementTracking() {
   const { state } = useGame();
-  const { trackStateTransition } = useAchievements();
+  const { trackStateTransition, syncSessionFromState } = useAchievements();
   const prevRef = useRef(state);
+
+  useEffect(() => {
+    syncSessionFromState(state);
+  }, [state, syncSessionFromState]);
 
   useEffect(() => {
     if (prevRef.current !== state) {
