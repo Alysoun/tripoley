@@ -34,7 +34,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   useEffect(() => {
-    if (state.players.length === 0 || state.phase === 'setup') {
+    if (
+      state.players.length === 0 ||
+      state.phase === 'setup' ||
+      state.phase === 'gameOver'
+    ) {
       clearGameSession();
       return;
     }
