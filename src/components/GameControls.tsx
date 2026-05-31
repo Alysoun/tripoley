@@ -11,18 +11,22 @@ import { useHudLayout } from '../context/HudLayoutContext';
 
 const Panel = styled.div`
   position: fixed;
-  top: 20px;
-  left: 20px;
-  right: 20px;
+  top: max(12px, env(safe-area-inset-top, 0px));
+  left: max(12px, env(safe-area-inset-left, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   z-index: 100;
   pointer-events: none;
 
   & > * {
     pointer-events: auto;
+  }
+
+  @media (max-width: 768px) {
+    gap: 6px;
   }
 `;
 
@@ -33,6 +37,11 @@ const PhaseBadge = styled.div`
   border-radius: 20px;
   border: 1px solid #ffd700;
   font-weight: 600;
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 0.88rem;
+  }
 `;
 
 const TurnBadge = styled.div`
@@ -40,6 +49,11 @@ const TurnBadge = styled.div`
   color: white;
   padding: 10px 16px;
   border-radius: 20px;
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 0.88rem;
+  }
 `;
 
 const QuitBtn = styled.button`

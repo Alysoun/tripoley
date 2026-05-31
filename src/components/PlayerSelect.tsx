@@ -29,12 +29,17 @@ const SelectContainer = styled.div`
   padding: 2rem;
   border-radius: 1rem;
   text-align: center;
-  min-width: 480px;
-  max-width: 620px;
-  max-height: 90vh;
+  min-width: min(480px, calc(100vw - 24px));
+  max-width: min(620px, calc(100vw - 16px));
+  max-height: min(90vh, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px));
   overflow-y: auto;
   border: 2px solid #ffd700;
   color: white;
+
+  @media (max-width: 480px) {
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+  }
 `;
 
 const Title = styled.h2`

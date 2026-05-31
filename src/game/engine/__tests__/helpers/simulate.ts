@@ -4,7 +4,7 @@ import { STARTING_CHIPS, POT_SECTION_KEYS } from '../../constants';
 import { gameReducer, initialGameState } from '../../reducer';
 import { getAIAction } from '../../ai';
 import { getLegalMichiganPlays, canPassLead } from '../../michigan';
-import { resolvePlayerActionTimeout } from '../../playerActionTimer';
+import { michiganRecoveryActions } from '../../michiganRecovery';
 
 export function totalChipsInSystem(state: GameState): number {
   const playerTotal = state.players.reduce((sum, p) => sum + p.chips, 0);
@@ -116,22 +116,15 @@ export function resolveAutomationAction(state: GameState): GameAction | null {
 }
 
 /** Fallback when Michigan turn sync is a no-op (sequence card unavailable, etc.). */
-function michiganRecoveryActions(state: GameState): GameAction[] {
-  const actions: GameAction[] = [{ type: 'MICHIGAN_SYNC_TURN' }];
-  if (state.houseRules.michiganSequenceTimer) {
-    actions.push({ type: 'MICHIGAN_TIMER_EXPIRE' });
-  }
-  const timed = resolvePlayerActionTimeout(state);
-  if (timed) actions.push(timed);
-  actions.push({ type: 'ACTION_TIMER_EXPIRE' });
-  return actions;
+function michiganRecoveryActionsForSim(state: GameState): GameAction[] {
+  return [...michiganRecoveryActions(state), { type: 'ACTION_TIMER_EXPIRE' }];
 }
 
 function dispatchWithRecovery(state: GameState, action: GameAction): GameState {
   let next = gameReducer(state, action);
   if (next !== state || state.phase !== 'michigan') return next;
 
-  for (const fallback of michiganRecoveryActions(state)) {
+  for (const fallback of michiganRecoveryActionsForSim(state)) {
     if (fallback.type === action.type) continue;
     next = gameReducer(state, fallback);
     if (next !== state) return next;

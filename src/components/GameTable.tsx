@@ -20,7 +20,7 @@ import { useAchievementTracking } from '../hooks/useAchievementTracking';
 import { potBoardToDisplaySections } from '../game/engine/reducer';
 import SeatAnchors from './SeatAnchors';
 import SeatLabels from './SeatLabels';
-import { TABLE_BOTTOM_INSET } from './hudLayout';
+import { TABLE_BOTTOM_INSET, TABLE_BOTTOM_INSET_PHONE, TABLE_BOTTOM_INSET_TABLET } from './hudLayout';
 import { HudLayoutProvider, useHudLayout } from '../context/HudLayoutContext';
 import { DEBUG, isDebugActive } from '../debugConfig';
 import { rulesFromPreset, defaultHouseRules } from '../game/engine/houseRules';
@@ -51,12 +51,22 @@ const TableContainer = styled.div`
   --table-tilt: ${TABLE_TILT};
   --table-bottom: ${TABLE_BOTTOM};
   width: 100vw;
+  width: 100dvw;
   height: 100vh;
+  height: 100dvh;
   position: relative;
   overflow: hidden;
   background:
     radial-gradient(ellipse 80% 50% at 50% 100%, rgba(0, 0, 0, 0.55) 0%, transparent 55%),
     radial-gradient(ellipse 120% 80% at 50% 40%, #1f3d28 0%, #0f1a12 55%, #080d09 100%);
+
+  @media (max-width: 768px) {
+    --table-bottom: ${TABLE_BOTTOM_INSET_TABLET};
+  }
+
+  @media (max-width: 480px) {
+    --table-bottom: ${TABLE_BOTTOM_INSET_PHONE};
+  }
 `;
 
 const TableScene = styled.div`
@@ -102,6 +112,18 @@ const TableStack = styled.div`
   max-height: min(72vh, 680px);
   transform: translateY(-2vh);
   transform-style: preserve-3d;
+
+  @media (max-width: 768px) {
+    width: min(92vw, 980px);
+    max-height: min(62vh, 560px);
+    transform: translateY(-1vh);
+  }
+
+  @media (max-width: 480px) {
+    width: min(96vw, 980px);
+    max-height: min(52vh, 440px);
+    transform: translateY(0);
+  }
 `;
 
 const TableSurface = styled.div`

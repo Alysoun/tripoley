@@ -58,7 +58,10 @@ function autoFoldEliminated(state: GameState): GameState {
 }
 
 function skipEliminatedCurrentPlayer(state: GameState): GameState {
-  if (!isEliminated(state.players[state.currentPlayer])) return state;
+  const current = state.players[state.currentPlayer];
+  if (!isEliminated(current)) return state;
+  // Busted players still play out Michigan if they hold cards (sequence / kitty).
+  if (state.phase === 'michigan' && current.cards.length > 0) return state;
   const nextId = nextInGamePlayer(state, state.currentPlayer);
   if (nextId === null || nextId === state.currentPlayer) return state;
   return { ...state, currentPlayer: nextId };

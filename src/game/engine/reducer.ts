@@ -17,6 +17,8 @@ import {
   getMichiganStarter,
   fixMichiganTurnIfStuck,
   canPassLead,
+  getLegalMichiganPlays,
+  advanceMichiganWhenSequenceUnavailable,
   resolveAfterMichiganPlay,
   nextActivePlayerLeft,
   leadColorLabel,
@@ -67,6 +69,7 @@ import {
   dealAnimationsForRound,
 } from './animations';
 import { debugStartingChips } from '../../debugConfig';
+import { michiganRecoveryActions } from './michiganRecovery';
 
 let logCounter = 0;
 
@@ -675,8 +678,48 @@ function completeBlindAuction(state: GameState): GameState {
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   const next = reduceGameState(state, action);
-  if (next === state) return state;
-  return finalizePlayerStatus(next, state);
+  if (next !== state) return finalizePlayerStatus(next, state);
+
+  if (
+    state.phase === 'michigan' &&
+    (action.type === 'MICHIGAN_SYNC_TURN' || action.type === 'MICHIGAN_PLAY')
+  ) {
+    const recovered = recoverMichiganFromNoOp(state, action);
+    if (recovered !== state) return finalizePlayerStatus(recovered, state);
+  }
+
+  return state;
+}
+
+function recoverMichiganFromNoOp(state: GameState, attempted: GameAction): GameState {
+  for (const fallback of michiganRecoveryActions(state)) {
+    if (fallback.type === attempted.type) continue;
+    const next = reduceGameState(state, fallback);
+    if (next !== state) return next;
+  }
+
+  const hands = state.players.map((p) => p.cards);
+  const advanced = advanceMichiganWhenSequenceUnavailable(hands, state.michigan);
+  if (advanced) {
+    return { ...state, michigan: advanced.michigan, currentPlayer: advanced.currentPlayer };
+  }
+
+  const player = state.players[state.currentPlayer];
+  if (
+    player &&
+    canPassLead(player.cards, state.michigan, player.id, state.currentPlayer)
+  ) {
+    return reduceGameState(state, { type: 'MICHIGAN_PASS_LEAD' });
+  }
+
+  const legal = player
+    ? getLegalMichiganPlays(player.cards, state.michigan, player.id, state.currentPlayer)
+    : [];
+  if (legal.length > 0) {
+    return reduceGameState(state, { type: 'MICHIGAN_PLAY', card: legal[0] });
+  }
+
+  return state;
 }
 
 function reduceGameState(state: GameState, action: GameAction): GameState {
@@ -1025,7 +1068,9 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
 
       const hands = state.players.map((p) => p.cards);
       const nextPlayer = nextActivePlayerLeft(state.currentPlayer, hands);
-      const penalize = state.houseRules.michiganLeadPassPenalty;
+      const penalize =
+        state.houseRules.michiganLeadPassPenalty &&
+        player.chips >= MICHIGAN_KITTY_PENALTY;
       const players = state.players.map((p, i) =>
         i === player.id && penalize
           ? { ...p, chips: p.chips - MICHIGAN_KITTY_PENALTY }
@@ -1089,6 +1134,23 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
         fixed.michigan.activeSuit === state.michigan.activeSuit &&
         fixed.michigan.nextValue === state.michigan.nextValue
       ) {
+        const advanced = advanceMichiganWhenSequenceUnavailable(hands, state.michigan);
+        if (advanced) {
+          const name = state.players[advanced.currentPlayer]
+            ? logPlayerName(state.players[advanced.currentPlayer])
+            : 'Player';
+          return appendLog(
+            {
+              ...state,
+              currentPlayer: advanced.currentPlayer,
+              michigan: advanced.michigan,
+            },
+            log(
+              `${name} must lead lowest ${leadColorLabel(advanced.michigan.leadColor)}`,
+              'info'
+            )
+          );
+        }
         return state;
       }
 

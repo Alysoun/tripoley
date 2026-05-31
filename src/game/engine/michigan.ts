@@ -286,6 +286,36 @@ export function recordShownPlay(
   return { ...shown, [playerId]: card };
 }
 
+/** Sequence card not in any live hand — last player leads opposite color. */
+export function advanceMichiganWhenSequenceUnavailable(
+  hands: Card[][],
+  michigan: MichiganState
+): { michigan: MichiganState; currentPlayer: number } | null {
+  if (
+    michigan.mode !== 'follow' ||
+    !michigan.activeSuit ||
+    !michigan.nextValue ||
+    michigan.lastPlayerId === null
+  ) {
+    return null;
+  }
+
+  const holder = findPlayerWithCard(hands, michigan.activeSuit, michigan.nextValue);
+  if (holder !== null) return null;
+
+  const opp = oppositeColor(suitColor(michigan.activeSuit));
+  return {
+    michigan: {
+      mode: 'lead',
+      leadColor: opp,
+      activeSuit: null,
+      nextValue: null,
+      lastPlayerId: michigan.lastPlayerId,
+    },
+    currentPlayer: michigan.lastPlayerId,
+  };
+}
+
 /** Reassign turn if current player cannot act (follow mode holder mismatch) */
 export function fixMichiganTurnIfStuck(
   hands: Card[][],
@@ -296,6 +326,8 @@ export function fixMichiganTurnIfStuck(
   if (!hand || hand.length === 0) {
     const next = nextActivePlayerLeft(currentPlayer, hands);
     if (next !== currentPlayer) {
+      const advanced = advanceMichiganWhenSequenceUnavailable(hands, michigan);
+      if (advanced) return advanced;
       return { michigan, currentPlayer: next };
     }
     return null;
@@ -314,20 +346,8 @@ export function fixMichiganTurnIfStuck(
     if (holder !== null && holder !== currentPlayer) {
       return { michigan, currentPlayer: holder };
     }
-    if (michigan.lastPlayerId !== null) {
-      const last = michigan.lastPlayerId;
-      const opp = oppositeColor(suitColor(michigan.activeSuit));
-      return {
-        michigan: {
-          mode: 'lead',
-          leadColor: opp,
-          activeSuit: null,
-          nextValue: null,
-          lastPlayerId: last,
-        },
-        currentPlayer: last,
-      };
-    }
+    const advanced = advanceMichiganWhenSequenceUnavailable(hands, michigan);
+    if (advanced) return advanced;
   }
 
   return null;

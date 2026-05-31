@@ -27,6 +27,8 @@ export type PotLabelOffsets = Record<SectionLabel, PotLabelOffset>;
 export const MAX_POT_LABEL_OFFSET_PX = 56;
 
 export const DEFAULT_SEAT_LABEL_SCALE = 1.45;
+export const DEFAULT_SEAT_LABEL_SCALE_TABLET = 1.25;
+export const DEFAULT_SEAT_LABEL_SCALE_PHONE = 1.05;
 export const MIN_SEAT_LABEL_SCALE = 1;
 export const MAX_SEAT_LABEL_SCALE = 2.5;
 export const MAX_SEAT_LABEL_OFFSET_PX = 80;
@@ -85,14 +87,42 @@ export function fanContainerSize(cardCount: number): { width: number; height: nu
   };
 }
 
+export function viewportWidth(): number {
+  return typeof window !== 'undefined' ? window.innerWidth : 1280;
+}
+
+export function defaultSeatLabelScaleForViewport(width = viewportWidth()): number {
+  if (width <= 480) return DEFAULT_SEAT_LABEL_SCALE_PHONE;
+  if (width <= 768) return DEFAULT_SEAT_LABEL_SCALE_TABLET;
+  return DEFAULT_SEAT_LABEL_SCALE;
+}
+
 export function defaultHudLayout(): HudLayout {
-  const w = typeof window !== 'undefined' ? window.innerWidth : 1280;
+  const w = viewportWidth();
   const h = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const narrow = w <= 480;
+  const tablet = w <= 768;
+
+  const bottomHandY = narrow
+    ? Math.max(96, h - 132)
+    : tablet
+      ? Math.max(108, h - 148)
+      : Math.max(120, h - 156);
+  const bottomInfoY = narrow
+    ? Math.max(88, h - 124)
+    : tablet
+      ? Math.max(96, h - 136)
+      : Math.max(96, h - 148);
+  const bottomActionsY = narrow
+    ? Math.max(88, h - 300)
+    : tablet
+      ? Math.max(96, h - 320)
+      : Math.max(96, h - 340);
 
   return {
-    info: { x: 16, y: Math.max(96, h - 148) },
-    hand: { x: Math.round(w / 2 - 160), y: Math.max(120, h - 156) },
-    actions: { x: Math.round(w / 2 - 280), y: Math.max(96, h - 340) },
+    info: { x: narrow ? 8 : 16, y: bottomInfoY },
+    hand: { x: Math.round(w / 2 - (narrow ? 120 : 160)), y: bottomHandY },
+    actions: { x: Math.round(w / 2 - (narrow ? 150 : 280)), y: bottomActionsY },
   };
 }
 
@@ -101,7 +131,7 @@ export function defaultStoredHudLayout(): StoredHudLayout {
     panels: defaultHudLayout(),
     handScale: DEFAULT_HAND_SCALE,
     potLabelOffsets: defaultPotLabelOffsets(),
-    seatLabelScale: DEFAULT_SEAT_LABEL_SCALE,
+    seatLabelScale: defaultSeatLabelScaleForViewport(),
     seatLabelOffsets: defaultSeatLabelOffsets(),
   };
 }
@@ -139,7 +169,7 @@ export function loadStoredHudLayout(): StoredHudLayout {
         seatLabelScale: clampSeatLabelScale(
           typeof parsed.seatLabelScale === 'number'
             ? parsed.seatLabelScale
-            : DEFAULT_SEAT_LABEL_SCALE
+            : defaultSeatLabelScaleForViewport()
         ),
         seatLabelOffsets: {
           ...defaultSeatLabelOffsets(),
