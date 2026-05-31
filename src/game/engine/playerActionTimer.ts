@@ -111,7 +111,9 @@ export function getActionTimerHint(state: GameState): string | null {
       return 'Choose swap, auction, or keep';
     case 'blindAuction':
       if (state.blindAuction.awaitingDealerClose) {
-        return 'Confirm the blind sale or no sale';
+        return state.blindAuction.highBidder !== null
+          ? 'Confirm high bidder takes the blind'
+          : 'No bids — blind stays face down';
       }
       return 'Bid or pass — passing is permanent for this auction';
     case 'poker':

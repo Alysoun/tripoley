@@ -156,12 +156,14 @@ const PlayerActionBar: React.FC = () => {
   } else if (canCloseAuction) {
     hint = winner ? (
       <>
-        <strong>Auction closed.</strong> {winner ? displayPlayerName(winner) : ''} bid{' '}
-        {auction.highBid} chips for the blind hand. Accept the sale or keep the blind face down.
+        <strong>Auction closed.</strong> {displayPlayerName(winner)} is the high bidder at{' '}
+        {auction.highBid} chips. They swap with the blind and pay you. Tap Confirm to continue to
+        Pay Cards.
       </>
     ) : (
       <>
-        <strong>No bids.</strong> The blind hand stays face down for pay cards.
+        <strong>No bids.</strong> Everyone passed — your hand stays as dealt and the blind stays
+        face down. Tap Continue for Pay Cards.
       </>
     );
   } else if (canPoker) {
@@ -240,8 +242,8 @@ const PlayerActionBar: React.FC = () => {
         {canCloseAuction && (
           <Btn $variant="primary" onClick={() => dispatch({ type: 'BLIND_AUCTION_RESOLVE' })}>
             {winner
-              ? `Accept ${displayPlayerName(winner)}'s bid (${auction.highBid})`
-              : 'Continue — no sale'}
+              ? `Confirm — ${displayPlayerName(winner)} takes blind (${auction.highBid})`
+              : 'Continue — blind stays face down'}
           </Btn>
         )}
 
