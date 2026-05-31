@@ -39,13 +39,15 @@ describe('full-game simulation', () => {
     const result = simulateGame({
       playerCount: 4,
       houseRules: { ...OFFICIAL_HOUSE_RULES },
-      maxSteps: 120_000,
+      maxSteps: 25_000,
+      startingChips: 60,
     });
     restore();
 
     expect(result.stuck).toBe(false);
     expect(result.finalState.phase).toBe('gameOver');
-  }, 300_000);
+    expect(result.steps).toBeLessThan(25_000);
+  });
 
   it('plays multiple rounds at 6 players without stuck state', () => {
     const restore = mockRandom(4242);

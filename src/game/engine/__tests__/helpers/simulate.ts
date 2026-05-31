@@ -1,10 +1,13 @@
 import { GameAction, GameState, SeatConfig, Card, PokerAction } from '../../../../types/GameTypes';
 import { HouseRules } from '../../houseRules';
-import { STARTING_CHIPS, POT_SECTION_KEYS } from '../../constants';
+import { POT_SECTION_KEYS } from '../../constants';
 import { gameReducer, initialGameState } from '../../reducer';
 import { getAIAction } from '../../ai';
 import { getLegalMichiganPlays, canPassLead } from '../../michigan';
 import { michiganRecoveryActions } from '../../michiganRecovery';
+import { createEmptyPot } from '../../payCards';
+import { applyAnteToPot, distributePlayerAnte } from '../../antes';
+import { inGamePlayers } from '../../playerStatus';
 
 export function totalChipsInSystem(state: GameState): number {
   const playerTotal = state.players.reduce((sum, p) => sum + p.chips, 0);
@@ -67,6 +70,21 @@ function aiPayloadToAction(raw: ReturnType<typeof getAIAction>): GameAction | nu
     default:
       return null;
   }
+}
+
+/** Short-stack restart for faster game-over stress sims (re-antes from a clean pot). */
+function applySimulationStartingChips(state: GameState, startingChips: number): GameState {
+  const pot = createEmptyPot();
+  let players = state.players.map((p) => ({ ...p, chips: startingChips }));
+  const scratch = { ...state, players, pot };
+  for (const p of inGamePlayers(scratch)) {
+    const { sections, chipsSpent } = distributePlayerAnte(p.chips);
+    players = players.map((x) =>
+      x.id === p.id ? { ...x, chips: x.chips - chipsSpent, anteSections: sections } : x
+    );
+    applyAnteToPot(pot, sections);
+  }
+  return { ...state, players, pot, animations: [] };
 }
 
 /** Pick the next automated action for an all-AI simulation (no UI timers). */
@@ -152,6 +170,8 @@ export interface SimulationOptions {
   houseRules: HouseRules;
   maxSteps?: number;
   maxRounds?: number;
+  /** Override starting stack per player (default engine 200). Lower = faster game-over sims. */
+  startingChips?: number;
 }
 
 export interface SimulationResult {
@@ -163,14 +183,18 @@ export interface SimulationResult {
 }
 
 export function simulateGame(options: SimulationOptions): SimulationResult {
-  const { playerCount, houseRules, maxSteps = 200_000, maxRounds } = options;
+  const { playerCount, houseRules, maxSteps = 200_000, maxRounds, startingChips } = options;
   let state = gameReducer(initialGameState, {
     type: 'START_GAME',
     seats: aiSeats(playerCount),
     houseRules,
   });
 
-  const expectedTotal = STARTING_CHIPS * playerCount;
+  if (startingChips != null) {
+    state = applySimulationStartingChips(state, startingChips);
+  }
+
+  const expectedTotal = totalChipsInSystem(state);
   let steps = 0;
   let roundsCompleted = 0;
   let lastRound = state.roundNumber;
