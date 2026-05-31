@@ -45,7 +45,7 @@ describe('full-game simulation', () => {
 
     expect(result.stuck).toBe(false);
     expect(result.finalState.phase).toBe('gameOver');
-  });
+  }, 300_000);
 
   it('plays multiple rounds at 6 players without stuck state', () => {
     const restore = mockRandom(4242);

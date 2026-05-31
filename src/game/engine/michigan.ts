@@ -30,6 +30,8 @@ export interface MichiganState {
   activeSuit: Suit | null;
   nextValue: Rank | null;
   lastPlayerId: number | null;
+  /** First player in the current lead-pass chain — full circle flips lead color. */
+  leadPassOrigin: number | null;
 }
 
 export function createMichiganState(): MichiganState {
@@ -39,6 +41,48 @@ export function createMichiganState(): MichiganState {
     activeSuit: null,
     nextValue: null,
     lastPlayerId: null,
+    leadPassOrigin: null,
+  };
+}
+
+export function countActivePlayersWithCards(hands: Card[][]): number {
+  return hands.filter((h) => h.length > 0).length;
+}
+
+/** Advance lead obligation left, or flip lead color when the table is stuck. */
+export function resolveLeadPassTurn(
+  hands: Card[][],
+  michigan: MichiganState,
+  playerId: number
+): { michigan: MichiganState; currentPlayer: number; flippedLeadColor: boolean } {
+  const nextPlayer = nextActivePlayerLeft(playerId, hands);
+  const origin = michigan.leadPassOrigin ?? playerId;
+  const fullCircuit =
+    michigan.leadPassOrigin !== null && nextPlayer === michigan.leadPassOrigin;
+  const stuckOnSelf = nextPlayer === playerId;
+
+  if (fullCircuit || stuckOnSelf) {
+    return {
+      michigan: {
+        ...michigan,
+        mode: 'lead',
+        leadColor: oppositeColor(michigan.leadColor),
+        activeSuit: null,
+        nextValue: null,
+        leadPassOrigin: null,
+      },
+      currentPlayer: stuckOnSelf ? playerId : nextPlayer,
+      flippedLeadColor: true,
+    };
+  }
+
+  return {
+    michigan: {
+      ...michigan,
+      leadPassOrigin: origin,
+    },
+    currentPlayer: nextPlayer,
+    flippedLeadColor: false,
   };
 }
 

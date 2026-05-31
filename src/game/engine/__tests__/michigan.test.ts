@@ -4,6 +4,7 @@ import {
   getLegalMichiganPlays,
   fixMichiganTurnIfStuck,
   validateMichiganPlay,
+  resolveLeadPassTurn,
 } from '../michigan';
 import { createCard } from '../cards';
 import { finalizePlayerStatus } from '../playerStatus';
@@ -75,6 +76,7 @@ describe('michigan rules', () => {
         activeSuit: 'clubs',
         nextValue: 'Q',
         lastPlayerId: 0,
+        leadPassOrigin: null,
       },
     };
 
@@ -132,6 +134,7 @@ describe('michigan rules', () => {
         activeSuit: null,
         nextValue: null,
         lastPlayerId: null,
+        leadPassOrigin: null,
       },
     };
 
@@ -144,5 +147,59 @@ describe('michigan rules', () => {
 
     expect(afterTotal).toBe(beforeTotal);
     expect(next.pot.kitty).toBe(0);
+  });
+
+  it('flips lead color after a full pass circuit instead of draining chips forever', () => {
+    const redOnly = (value: string) => createCard('hearts', value as '2');
+    const hands = [
+      [redOnly('2')],
+      [redOnly('3')],
+      [redOnly('4')],
+      [redOnly('5')],
+    ];
+    let michigan = createMichiganState();
+    let currentPlayer = 0;
+
+    for (let i = 0; i < 4; i += 1) {
+      const pass = resolveLeadPassTurn(hands, michigan, currentPlayer);
+      michigan = pass.michigan;
+      currentPlayer = pass.currentPlayer;
+    }
+
+    expect(michigan.leadColor).toBe('red');
+    expect(michigan.leadPassOrigin).toBeNull();
+  });
+
+  it('game stops lead-pass chip bleed when nobody has the required color', () => {
+    const prev: GameState = {
+      ...initialGameState,
+      phase: 'michigan',
+      houseRules: { ...defaultHouseRules(), michiganLeadPassPenalty: true },
+      currentPlayer: 0,
+      players: [
+        { id: 0, name: 'You', isHuman: true, chips: 300, cards: [createCard('hearts', '2')], originalHand: [] },
+        { id: 1, name: 'B', isHuman: false, chips: 50, cards: [createCard('diamonds', '3')], originalHand: [] },
+        { id: 2, name: 'C', isHuman: false, chips: 50, cards: [createCard('hearts', '4')], originalHand: [] },
+        { id: 3, name: 'D', isHuman: false, chips: 50, cards: [createCard('diamonds', '5')], originalHand: [] },
+      ],
+      pot: { ...initialGameState.pot, kitty: 0 },
+      michigan: createMichiganState(),
+    };
+
+    const beforeTotal =
+      prev.players.reduce((sum, p) => sum + p.chips, 0) + Object.values(prev.pot).reduce((a, b) => a + b, 0);
+
+    let state = prev;
+    for (let i = 0; i < 8; i += 1) {
+      state = gameReducer(state, { type: 'MICHIGAN_PASS_LEAD' });
+    }
+
+    const afterTotal =
+      state.players.reduce((sum, p) => sum + p.chips, 0) + Object.values(state.pot).reduce((a, b) => a + b, 0);
+
+    expect(afterTotal).toBe(beforeTotal);
+    expect(state.pot.kitty).toBe(4);
+    expect(state.michigan.leadColor).toBe('red');
+    expect(state.players[0].chips).toBe(299);
   });
 });

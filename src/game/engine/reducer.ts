@@ -26,6 +26,7 @@ import {
   emptyShownPlays,
   recordShownPlay,
   formatPlayerPlays,
+  resolveLeadPassTurn,
 } from './michigan';
 import { comparePokerHands, evaluateBestPokerHand } from './poker';
 import {
@@ -538,18 +539,17 @@ function finishMichigan(state: GameState, winnerId: number): GameState {
   const kittyAmount = kittyEligible ? state.pot.kitty : 0;
   const kittyLeftover = kittyEligible ? 0 : state.pot.kitty;
   const penalize = state.houseRules.michiganRemainingCardPenalty;
-  const penaltyIncome = penalize
-    ? state.players
-        .filter((other) => other.id !== winnerId)
-        .reduce((sum, other) => sum + other.cards.length * MICHIGAN_PENALTY_PER_CARD, 0)
-    : 0;
+  let penaltyIncome = 0;
   let players = state.players.map((p) => {
-    if (p.id === winnerId) {
-      return { ...p, chips: p.chips + kittyAmount + penaltyIncome };
-    }
-    const penalty = penalize ? p.cards.length * MICHIGAN_PENALTY_PER_CARD : 0;
-    return { ...p, chips: p.chips - penalty };
+    if (p.id === winnerId) return p;
+    const owed = penalize ? p.cards.length * MICHIGAN_PENALTY_PER_CARD : 0;
+    const paid = penalize ? Math.min(owed, p.chips) : 0;
+    penaltyIncome += paid;
+    return { ...p, chips: p.chips - paid };
   });
+  players = players.map((p) =>
+    p.id === winnerId ? { ...p, chips: p.chips + kittyAmount + penaltyIncome } : p
+  );
 
   let pot = clonePot(state.pot);
   pot.kitty = kittyLeftover;
@@ -577,15 +577,17 @@ function finishMichigan(state: GameState, winnerId: number): GameState {
     log(`${winnerName} empties their hand and wins the Kitty!`, 'success')
   );
   state.players.forEach((p) => {
-    if (p.id !== winnerId && p.cards.length > 0 && penalize) {
-      lines.push(
-        `${logPlayerName(p)} pays ${p.cards.length} chip${p.cards.length === 1 ? '' : 's'} to ${winnerName} for ${p.cards.length} remaining card${p.cards.length === 1 ? '' : 's'}.`
-      );
-      next = appendLog(
-        next,
-        log(`${logPlayerName(p)} pays ${p.cards.length} chip(s) for remaining cards`, 'info')
-      );
-    }
+    if (p.id === winnerId || p.cards.length === 0 || !penalize) return;
+    const owed = p.cards.length * MICHIGAN_PENALTY_PER_CARD;
+    const paid = Math.min(owed, p.chips);
+    if (paid <= 0) return;
+    lines.push(
+      `${logPlayerName(p)} pays ${paid} chip${paid === 1 ? '' : 's'} to ${winnerName} for ${p.cards.length} remaining card${p.cards.length === 1 ? '' : 's'}.`
+    );
+    next = appendLog(
+      next,
+      log(`${logPlayerName(p)} pays ${paid} chip(s) for remaining cards`, 'info')
+    );
   });
 
   return showAnnouncement(
@@ -782,6 +784,7 @@ function recoverMichiganFromNoOp(state: GameState, attempted: GameAction): GameS
   const player = state.players[state.currentPlayer];
   if (
     player &&
+    !player.isHuman &&
     canPassLead(player.cards, state.michigan, player.id, state.currentPlayer)
   ) {
     return reduceGameState(state, { type: 'MICHIGAN_PASS_LEAD' });
@@ -1056,7 +1059,7 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
         players,
         pot,
         payCardClaims,
-        michigan: turn.michigan,
+        michigan: { ...turn.michigan, leadPassOrigin: null },
         michiganShownPlays: shownPlays,
         michiganPlayArea: [...state.michiganPlayArea, action.card],
       };
@@ -1143,7 +1146,7 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
       }
 
       const hands = state.players.map((p) => p.cards);
-      const nextPlayer = nextActivePlayerLeft(state.currentPlayer, hands);
+      const passTurn = resolveLeadPassTurn(hands, state.michigan, player.id);
       const penalize =
         state.houseRules.michiganLeadPassPenalty &&
         player.chips >= MICHIGAN_KITTY_PENALTY;
@@ -1155,18 +1158,22 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
       const pot = clonePot(state.pot);
       if (penalize) pot.kitty += MICHIGAN_KITTY_PENALTY;
 
-      const nextName = state.players[nextPlayer]
-        ? logPlayerName(state.players[nextPlayer])
+      const nextName = state.players[passTurn.currentPlayer]
+        ? logPlayerName(state.players[passTurn.currentPlayer])
         : 'Player';
       const penaltyMsg = penalize
         ? `pays ${MICHIGAN_KITTY_PENALTY} to kitty; `
+        : '';
+      const flipMsg = passTurn.flippedLeadColor
+        ? `nobody could lead ${leadColorLabel(state.michigan.leadColor)} — switch to ${leadColorLabel(passTurn.michigan.leadColor)}; `
         : '';
       let next = appendLog(
         {
           ...state,
           players,
           pot,
-          currentPlayer: nextPlayer,
+          currentPlayer: passTurn.currentPlayer,
+          michigan: passTurn.michigan,
           achievementSession:
             player.isHuman && state.achievementSession
               ? {
@@ -1177,7 +1184,9 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
               : state.achievementSession,
         },
         log(
-          `${logPlayerName(player)} cannot lead ${leadColorLabel(state.michigan.leadColor)} — ${penaltyMsg}${nextName} to lead`,
+          passTurn.flippedLeadColor
+            ? `${flipMsg}${nextName} must lead lowest ${leadColorLabel(passTurn.michigan.leadColor)}`
+            : `${logPlayerName(player)} cannot lead ${leadColorLabel(state.michigan.leadColor)} — ${penaltyMsg}${nextName} to lead`,
           'info'
         )
       );
@@ -1196,6 +1205,7 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
         const player = state.players[state.currentPlayer];
         if (
           player &&
+          !player.isHuman &&
           canPassLead(player.cards, state.michigan, player.id, state.currentPlayer)
         ) {
           return gameReducer(state, { type: 'MICHIGAN_PASS_LEAD' });

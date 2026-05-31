@@ -55,6 +55,7 @@ export interface MichiganState {
   activeSuit: Suit | null;
   nextValue: Rank | null;
   lastPlayerId: number | null;
+  leadPassOrigin: number | null;
 }
 
 export interface PokerState {

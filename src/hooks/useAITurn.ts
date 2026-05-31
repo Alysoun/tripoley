@@ -31,7 +31,10 @@ function runAITurnSync(
       state.currentPlayer
     );
     if (legal.length === 0) {
-      if (canPassLead(current.cards, state.michigan, current.id, state.currentPlayer)) {
+      if (
+        !current.isHuman &&
+        canPassLead(current.cards, state.michigan, current.id, state.currentPlayer)
+      ) {
         dispatch({ type: 'MICHIGAN_PASS_LEAD' });
       } else {
         dispatch({ type: 'MICHIGAN_SYNC_TURN' });
@@ -74,7 +77,10 @@ export function useAITurn() {
         state.currentPlayer
       );
       if (legal.length === 0) {
-        if (canPassLead(current.cards, state.michigan, current.id, state.currentPlayer)) {
+        if (
+          !current.isHuman &&
+          canPassLead(current.cards, state.michigan, current.id, state.currentPlayer)
+        ) {
           dispatch({ type: 'MICHIGAN_PASS_LEAD' });
           return;
         }
