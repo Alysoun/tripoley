@@ -63,12 +63,6 @@ const Actions = styled.div`
   gap: 10px;
 `;
 
-const SecondaryBtn = styled(Btn)`
-  background: transparent;
-  color: #ffd700;
-  border: 1px solid rgba(255, 215, 0, 0.45);
-`;
-
 const Btn = styled.button`
   padding: 12px 28px;
   border: none;
@@ -82,6 +76,12 @@ const Btn = styled.button`
   &:hover {
     opacity: 0.92;
   }
+`;
+
+const SecondaryBtn = styled(Btn)`
+  background: transparent;
+  color: #ffd700;
+  border: 1px solid rgba(255, 215, 0, 0.45);
 `;
 
 const GameOverModal: React.FC = () => {
