@@ -69,6 +69,7 @@ import {
   chipFromPotToPlayer,
   dealAnimationsForRound,
 } from './animations';
+import { createLogEntry, pushLog, resetLogCounter } from './gameLog';
 import { debugStartingChips } from '../../debugConfig';
 import {
   ANTE_SECTION_COUNT,
@@ -79,19 +80,16 @@ import {
 } from './antes';
 import { michiganRecoveryActions } from './michiganRecovery';
 
-let logCounter = 0;
-
 function logPlayerName(player: Player): string {
   return displayPlayerName(player);
 }
 
 function log(message: string, type: GameLogEntry['type'] = 'info'): GameLogEntry {
-  logCounter += 1;
-  return { id: `log-${logCounter}`, message, type };
+  return createLogEntry(message, type);
 }
 
 function appendLog(state: GameState, entry: GameLogEntry): GameState {
-  return { ...state, log: [...state.log.slice(-40), entry] };
+  return pushLog(state, entry);
 }
 
 function createInitialPokerState(playerCount: number): PokerState {
@@ -808,6 +806,8 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
       if (playerCount < MIN_PLAYERS || playerCount > MAX_PLAYERS) return state;
       const dealerId = 0;
       const soloHuman = seats.filter((s) => s.isHuman).length === 1;
+      const aiOnly = seats.every((s) => !s.isHuman);
+      resetLogCounter();
       const { players: dealt, deadHand } = dealHands(playerCount, dealerId);
       const players: Player[] = seats.map((seat, i) => ({
         id: i,
@@ -820,6 +820,14 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
         originalHand: [...dealt[i]],
         aiDifficulty: seat.isHuman ? undefined : seat.aiDifficulty ?? 'medium',
       }));
+
+      const opening = [
+        log(`Round 1 — ${playerCount} players`, 'info'),
+        log(
+          `House rules: ${summarizeHouseRules(action.houseRules ?? defaultHouseRules())}`,
+          'info'
+        ),
+      ];
 
       let next: GameState = {
         ...initialGameState,
@@ -837,10 +845,10 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
         achievementSession: soloHuman
           ? { sequenceTimedOut: false, leadPassUsed: false, humanLeadPasses: 0 }
           : undefined,
-        log: [
-          log(`Round 1 — ${playerCount} players`, 'info'),
-          log(`House rules: ${summarizeHouseRules(action.houseRules ?? defaultHouseRules())}`, 'info'),
-        ],
+        recordFullSessionLog: aiOnly,
+        sessionStartedAt: aiOnly ? Date.now() : undefined,
+        sessionLog: aiOnly ? [...opening] : undefined,
+        log: opening,
       };
       next = collectAntesFromPlayers(next);
       next = dealAnimationsForRound(next);

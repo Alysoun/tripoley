@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useGame } from '../context/GameContext';
+import { downloadSessionLog } from '../game/sessionLogExport';
 import { soundManager } from '../utils/SoundEffects';
 
 const Overlay = styled.div`
@@ -57,6 +58,15 @@ const Actions = styled.div`
   margin-top: 20px;
   padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const SecondaryBtn = styled(Btn)`
+  background: transparent;
+  color: #ffd700;
+  border: 1px solid rgba(255, 215, 0, 0.45);
 `;
 
 const Btn = styled.button`
@@ -81,6 +91,7 @@ const GameOverModal: React.FC = () => {
 
   const lastLine = [...state.log].reverse().find((entry) => entry.type === 'error');
   const message = lastLine?.message ?? 'Your run at the table has ended.';
+  const aiSession = !!state.recordFullSessionLog;
 
   return (
     <Overlay role="dialog" aria-modal="true" aria-labelledby="game-over-title">
@@ -88,6 +99,19 @@ const GameOverModal: React.FC = () => {
         <Title id="game-over-title">Game Over</Title>
         <Message>{message}</Message>
         <Actions>
+          {aiSession && (
+            <SecondaryBtn
+              type="button"
+              onClick={() => {
+                void soundManager.unlock().then(() => {
+                  soundManager.play('buttonClick');
+                  downloadSessionLog(state);
+                });
+              }}
+            >
+              Save full session log
+            </SecondaryBtn>
+          )}
           <Btn
             type="button"
             onClick={() => {

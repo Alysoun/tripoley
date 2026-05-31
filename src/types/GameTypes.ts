@@ -112,6 +112,11 @@ export interface GameState {
   houseRules: HouseRules;
   roundNumber: number;
   log: GameLogEntry[];
+  /** Full chronological log for AI-only sessions (exportable). */
+  sessionLog?: GameLogEntry[];
+  /** When true, every log line is kept in sessionLog. */
+  recordFullSessionLog?: boolean;
+  sessionStartedAt?: number;
   soundEnabled: boolean;
   michiganPlayArea: Card[];
   /** Last card each player played this Michigan phase (shown at their seat) */

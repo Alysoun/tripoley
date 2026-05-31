@@ -1,5 +1,6 @@
 import { GameState, Player } from '../../types/GameTypes';
 import { displayPlayerName } from '../../utils/playerName';
+import { pushLogMessage } from './gameLog';
 
 export function isEliminated(player: Player | undefined): boolean {
   return !player || player.chips <= 0;
@@ -70,20 +71,16 @@ function skipEliminatedCurrentPlayer(state: GameState): GameState {
 }
 
 function gameOverState(state: GameState, message: string): GameState {
-  return {
-    ...state,
-    phase: 'gameOver',
-    announcement: null,
-    announcementContinue: null,
-    log: [
-      ...state.log.slice(-39),
-      {
-        id: `log-go-${Date.now()}`,
-        message,
-        type: 'error' as const,
-      },
-    ],
-  };
+  return pushLogMessage(
+    {
+      ...state,
+      phase: 'gameOver',
+      announcement: null,
+      announcementContinue: null,
+    },
+    message,
+    'error'
+  );
 }
 
 /** Clamp negative balances, fold busted players, end solo games when human is out. */
@@ -99,17 +96,11 @@ export function finalizePlayerStatus(state: GameState, prev: GameState): GameSta
     (p) => isEliminated(p) && (prev.players[p.id]?.chips ?? 0) > 0
   );
   for (const p of newlyBusted) {
-    next = {
-      ...next,
-      log: [
-        ...next.log.slice(-39),
-        {
-          id: `log-out-${p.id}-${Date.now()}`,
-          message: `${eliminationLogName(p)} is out — no chips remaining`,
-          type: 'error' as const,
-        },
-      ],
-    };
+    next = pushLogMessage(
+      next,
+      `${eliminationLogName(p)} is out — no chips remaining`,
+      'error'
+    );
   }
 
   next = autoFoldEliminated(next);

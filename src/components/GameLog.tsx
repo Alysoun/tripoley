@@ -1,8 +1,13 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import styled from 'styled-components';
 import Draggable, { DraggableData } from 'react-draggable';
 import { useGame } from '../context/GameContext';
 import { useHudLayout } from '../context/HudLayoutContext';
+import {
+  copySessionLogToClipboard,
+  downloadSessionLog,
+} from '../game/sessionLogExport';
+import { sessionLogEntries } from '../game/engine/gameLog';
 import {
   gameLogDragBounds,
   MAX_GAME_LOG_HEIGHT_DESKTOP,
@@ -54,13 +59,48 @@ const LogHeader = styled.div`
   color: #ffd700;
   font-weight: 600;
   font-size: 0.8rem;
+  gap: 6px;
+`;
+
+const LogTitle = styled.span`
   cursor: grab;
   user-select: none;
   touch-action: none;
+  flex: 1;
+  min-width: 0;
 
   &:active {
     cursor: grabbing;
   }
+`;
+
+const HeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+`;
+
+const HeaderBtn = styled.button`
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  background: rgba(255, 215, 0, 0.08);
+  color: #ffd700;
+  cursor: pointer;
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  min-height: 28px;
+  border-radius: 6px;
+  font-weight: 600;
+
+  &:hover {
+    background: rgba(255, 215, 0, 0.16);
+  }
+`;
+
+const LogCount = styled.span`
+  font-size: 0.68rem;
+  color: #9a9a9a;
+  font-weight: 500;
 `;
 
 const CollapseBtn = styled.button`
@@ -110,6 +150,9 @@ const GameLog: React.FC = () => {
   const groupActive = isEditingLayoutGroup('log');
   const dimmed = layoutEditMode && !groupActive;
   const nodeRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+  const fullLog = state.recordFullSessionLog;
+  const totalEntries = sessionLogEntries(state).length;
 
   const onDrag = useCallback(
     (_: unknown, data: DraggableData) => {
@@ -117,6 +160,18 @@ const GameLog: React.FC = () => {
     },
     [setGameLogLayout]
   );
+
+  const handleCopy = useCallback(async () => {
+    const ok = await copySessionLogToClipboard(state);
+    if (ok) {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    }
+  }, [state]);
+
+  const handleDownload = useCallback(() => {
+    downloadSessionLog(state);
+  }, [state]);
 
   if (state.phase === 'setup') return null;
 
@@ -149,14 +204,29 @@ const GameLog: React.FC = () => {
             : `min(${MAX_GAME_LOG_HEIGHT_DESKTOP}px, calc(100dvh - 120px))`,
         }}
       >
-        <LogHeader className="log-drag-handle">
-          <span>{groupActive ? '⠿ Game Log' : 'Game Log'}</span>
-          <CollapseBtn
-            type="button"
-            onClick={() => setGameLogLayout({ collapsed: !gameLogLayout.collapsed })}
-          >
-            {gameLogLayout.collapsed ? '▸' : '▾'}
-          </CollapseBtn>
+        <LogHeader>
+          <LogTitle className="log-drag-handle">
+            {groupActive ? '⠿ Game Log' : 'Game Log'}
+            {fullLog && <LogCount> · {totalEntries} saved</LogCount>}
+          </LogTitle>
+          <HeaderActions>
+            {fullLog && (
+              <>
+                <HeaderBtn type="button" onClick={handleCopy}>
+                  {copied ? 'Copied' : 'Copy'}
+                </HeaderBtn>
+                <HeaderBtn type="button" onClick={handleDownload}>
+                  Save
+                </HeaderBtn>
+              </>
+            )}
+            <CollapseBtn
+              type="button"
+              onClick={() => setGameLogLayout({ collapsed: !gameLogLayout.collapsed })}
+            >
+              {gameLogLayout.collapsed ? '▸' : '▾'}
+            </CollapseBtn>
+          </HeaderActions>
         </LogHeader>
         {!gameLogLayout.collapsed && (
           <LogBody>
