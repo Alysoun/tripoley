@@ -16,7 +16,7 @@ export const LAYOUT_EDIT_GROUP_LABELS: Record<LayoutEditGroup, string> = {
 
 export const LAYOUT_EDIT_GROUP_HINTS: Record<LayoutEditGroup, string> = {
   hud: 'Drag panel handles to reposition. Use the hand size slider below (easier on touch than the corner grip).',
-  log: 'Drag the game log panel. Use ▾ to collapse it if it blocks the table.',
+  log: 'Drag the log anywhere on screen. Use the width and height sliders in the log header.',
   opponents: 'Drag opponent name labels within the blue box around each seat.',
   pot: 'Drag pot chip labels within the dashed range around each gold anchor.',
 };
@@ -129,10 +129,20 @@ export function viewportHeight(): number {
   return typeof window !== 'undefined' ? window.innerHeight : 800;
 }
 
-/** Top of draggable region — clears layout banner while editing. */
+/** Top of draggable region — clears layout banner while editing HUD panels. */
 export function layoutEditTopInset(): number {
   return 168;
 }
+
+/** Game log can sit under the layout banner but below the top control bar. */
+export function layoutEditLogTopInset(): number {
+  return 56;
+}
+
+export const MIN_GAME_LOG_WIDTH = 140;
+export const MAX_GAME_LOG_WIDTH = 520;
+export const MIN_GAME_LOG_HEIGHT = 72;
+export const MAX_GAME_LOG_HEIGHT_DESKTOP = 280;
 
 /** Minimal bottom margin while editing so panels can sit near the screen edge. */
 export function layoutEditBottomInset(): number {

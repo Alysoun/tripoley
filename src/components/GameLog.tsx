@@ -3,7 +3,17 @@ import styled from 'styled-components';
 import Draggable, { DraggableData } from 'react-draggable';
 import { useGame } from '../context/GameContext';
 import { useHudLayout } from '../context/HudLayoutContext';
-import { hudSafeAreaBottom, layoutEditBottomInset, layoutEditTopInset, viewportHeight, viewportWidth } from './hudPanelLayout';
+import {
+  MAX_GAME_LOG_HEIGHT_DESKTOP,
+  MAX_GAME_LOG_WIDTH,
+  MIN_GAME_LOG_HEIGHT,
+  MIN_GAME_LOG_WIDTH,
+  hudSafeAreaBottom,
+  layoutEditBottomInset,
+  layoutEditLogTopInset,
+  viewportHeight,
+  viewportWidth,
+} from './hudPanelLayout';
 
 const STORAGE_KEY = 'tripoley-game-log-layout';
 
@@ -30,18 +40,29 @@ function defaultLayout(): LogLayout {
   };
 }
 
+function maxLogHeight(editing: boolean, top = layoutEditLogTopInset()): number {
+  const h = viewportHeight();
+  if (editing) return Math.min(Math.floor(h * 0.82), h - top - 16);
+  return Math.min(MAX_GAME_LOG_HEIGHT_DESKTOP, h - 120);
+}
+
+function maxLogWidth(editing: boolean): number {
+  const w = viewportWidth();
+  return editing ? Math.min(MAX_GAME_LOG_WIDTH, w - 16) : 360;
+}
+
 function clampLayout(layout: LogLayout, editing = false): LogLayout {
   const w = viewportWidth();
   const h = viewportHeight();
-  const width = Math.min(Math.max(180, layout.width), 360);
+  const top = layoutEditLogTopInset();
+  const width = Math.min(Math.max(MIN_GAME_LOG_WIDTH, layout.width), maxLogWidth(editing));
   const height = layout.collapsed
     ? 40
-    : Math.min(Math.max(90, layout.height), Math.min(280, h - 120));
+    : Math.min(Math.max(MIN_GAME_LOG_HEIGHT, layout.height), maxLogHeight(editing, top));
   const maxX = Math.max(0, w - width - 8);
-  const top = editing ? layoutEditTopInset() : 56;
   const maxY = editing
-    ? Math.max(top, h - layoutEditBottomInset() - (layout.collapsed ? 36 : 48))
-    : Math.max(56, h - hudSafeAreaBottom() - height);
+    ? Math.max(top, h - layoutEditBottomInset() - (layout.collapsed ? 28 : 32))
+    : Math.max(top, h - hudSafeAreaBottom() - height);
 
   return {
     ...layout,
@@ -87,10 +108,11 @@ const LogPanel = styled.div<{
 }>`
   width: ${(p) => p.$width}px;
   height: ${(p) => (p.$collapsed ? 'auto' : `${p.$height}px`)};
-  min-width: 180px;
-  max-width: 360px;
-  min-height: ${(p) => (p.$collapsed ? 'auto' : '90px')};
-  max-height: min(280px, calc(100dvh - 120px));
+  min-width: ${MIN_GAME_LOG_WIDTH}px;
+  max-width: ${(p) => (p.$editMode ? 'calc(100vw - 16px)' : '360px')};
+  min-height: ${(p) => (p.$collapsed ? 'auto' : `${MIN_GAME_LOG_HEIGHT}px`)};
+  max-height: ${(p) =>
+    p.$editMode ? 'calc(100dvh - 64px)' : `min(${MAX_GAME_LOG_HEIGHT_DESKTOP}px, calc(100dvh - 120px))`};
   display: flex;
   flex-direction: column;
   background: rgba(0, 0, 0, 0.88);
@@ -100,7 +122,7 @@ const LogPanel = styled.div<{
   font-size: 0.78rem;
   color: #eee;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  overflow: hidden;
+  overflow: ${(p) => (p.$editMode && !p.$collapsed ? 'auto' : 'hidden')};
   opacity: ${(p) => (p.$dimmed ? 0.38 : 1)};
   pointer-events: ${(p) => (p.$dimmed ? 'none' : 'auto')};
   transition: opacity 0.15s ease;
@@ -131,6 +153,32 @@ const LogHeader = styled.div`
 
   &:active {
     cursor: grabbing;
+  }
+`;
+
+const SizeControls = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  touch-action: auto;
+  pointer-events: auto;
+`;
+
+const SizeLabel = styled.label`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #ccc;
+  font-size: 0.72rem;
+  font-weight: 500;
+  min-width: 0;
+
+  input[type='range'] {
+    width: min(120px, 28vw);
+    accent-color: #ffd700;
   }
 `;
 
@@ -184,18 +232,21 @@ const GameLog: React.FC = () => {
   const saveTimerRef = useRef<number | null>(null);
   const [layout, setLayout] = useState<LogLayout>(() => layoutRef.current);
 
-  const persistLayout = useCallback((next: LogLayout) => {
-    const clamped = clampLayout(next, groupActive);
-    layoutRef.current = clamped;
-    setLayout(clamped);
-    if (saveTimerRef.current !== null) {
-      window.clearTimeout(saveTimerRef.current);
-    }
-    saveTimerRef.current = window.setTimeout(() => {
-      saveLayout(clamped);
-      saveTimerRef.current = null;
-    }, 120);
-  }, [groupActive]);
+  const persistLayout = useCallback(
+    (next: LogLayout) => {
+      const clamped = clampLayout(next, groupActive);
+      layoutRef.current = clamped;
+      setLayout(clamped);
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current);
+      }
+      saveTimerRef.current = window.setTimeout(() => {
+        saveLayout(clamped);
+        saveTimerRef.current = null;
+      }, 120);
+    },
+    [groupActive]
+  );
 
   useEffect(() => {
     return () => {
@@ -223,7 +274,7 @@ const GameLog: React.FC = () => {
     [persistLayout]
   );
 
-  const onResize = useCallback(() => {
+  const onResizePanel = useCallback(() => {
     const el = nodeRef.current;
     if (!el || layoutRef.current.collapsed || !groupActive) return;
     const width = el.offsetWidth;
@@ -240,21 +291,24 @@ const GameLog: React.FC = () => {
   useEffect(() => {
     const el = nodeRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(onResize);
+    const observer = new ResizeObserver(onResizePanel);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [onResize]);
+  }, [onResizePanel]);
 
   if (state.phase === 'setup') return null;
 
   const logBounds = groupActive
     ? {
         left: 8,
-        top: layoutEditTopInset(),
+        top: layoutEditLogTopInset(),
         right: Math.max(8, viewportWidth() - 48),
-        bottom: Math.max(layoutEditTopInset(), viewportHeight() - layoutEditBottomInset()),
+        bottom: Math.max(layoutEditLogTopInset(), viewportHeight() - layoutEditBottomInset()),
       }
     : undefined;
+
+  const maxWidth = maxLogWidth(groupActive);
+  const maxHeight = maxLogHeight(groupActive);
 
   return (
     <Draggable
@@ -294,6 +348,40 @@ const GameLog: React.FC = () => {
             {layout.collapsed ? '▸' : '▾'}
           </CollapseBtn>
         </LogHeader>
+        {groupActive && !layout.collapsed && (
+          <SizeControls>
+            <SizeLabel>
+              Width
+              <input
+                type="range"
+                min={MIN_GAME_LOG_WIDTH}
+                max={maxWidth}
+                step={4}
+                value={layout.width}
+                onChange={(e) =>
+                  persistLayout({ ...layoutRef.current, width: Number(e.target.value) })
+                }
+                aria-label="Game log width"
+              />
+              {layout.width}px
+            </SizeLabel>
+            <SizeLabel>
+              Height
+              <input
+                type="range"
+                min={MIN_GAME_LOG_HEIGHT}
+                max={maxHeight}
+                step={4}
+                value={layout.height}
+                onChange={(e) =>
+                  persistLayout({ ...layoutRef.current, height: Number(e.target.value) })
+                }
+                aria-label="Game log height"
+              />
+              {layout.height}px
+            </SizeLabel>
+          </SizeControls>
+        )}
         {!layout.collapsed && (
           <LogBody>
             {[...state.log].reverse().map((entry) => (

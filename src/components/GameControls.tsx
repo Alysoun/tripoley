@@ -4,16 +4,16 @@ import { useGame } from '../context/GameContext';
 import { PHASE_LABELS } from '../game/engine/constants';
 import { displayPlayerName } from '../utils/playerName';
 import { useGameEffects } from '../hooks/useGameEffects';
-import { soundManager } from '../utils/SoundEffects';
 import { useAchievements } from '../context/AchievementContext';
 import AchievementsPanel from './AchievementsPanel';
 import { useHudLayout } from '../context/HudLayoutContext';
+import LeaveTableButton from './LeaveTableButton';
 
 const Panel = styled.div`
   position: fixed;
   top: max(12px, env(safe-area-inset-top, 0px));
   left: max(12px, env(safe-area-inset-left, 0px));
-  right: max(12px, env(safe-area-inset-right, 0px));
+  right: max(132px, calc(env(safe-area-inset-right, 0px) + 120px));
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -56,21 +56,6 @@ const TurnBadge = styled.div`
   }
 `;
 
-const QuitBtn = styled.button`
-  padding: 10px 16px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 120, 120, 0.55);
-  background: rgba(80, 20, 20, 0.85);
-  color: #ffb4b4;
-  font-weight: 600;
-  cursor: pointer;
-
-  &:hover {
-    background: rgba(120, 30, 30, 0.95);
-    color: #fff;
-  }
-`;
-
 const RightCluster = styled.div`
   margin-left: auto;
   display: flex;
@@ -95,55 +80,11 @@ const SoundBtn = styled.button<{ $active?: boolean }>`
   }
 `;
 
-const Modal = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.78);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2500;
-  padding: 24px;
-`;
-
-const ModalBox = styled.div`
-  background: #111;
-  border: 2px solid rgba(255, 120, 120, 0.65);
-  border-radius: 14px;
-  padding: 28px 32px;
-  color: white;
-  max-width: 420px;
-  text-align: center;
-`;
-
-const ModalActions = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 20px;
-  flex-wrap: wrap;
-`;
-
-const ModalBtn = styled.button<{ $variant?: 'danger' | 'primary' }>`
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  background: ${(p) => (p.$variant === 'danger' ? '#a33' : '#444')};
-  color: #fff;
-
-  &:hover {
-    opacity: 0.92;
-  }
-`;
-
 const GameControls: React.FC = () => {
-  const { state, dispatch } = useGame();
-  const { unlockedCount, trackGameQuit } = useAchievements();
+  const { state } = useGame();
+  const { unlockedCount } = useAchievements();
   const { toggleSound, isSoundEnabled } = useGameEffects();
   const { layoutEditMode, toggleLayoutEditMode, resetLayout } = useHudLayout();
-  const [confirmQuit, setConfirmQuit] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const current = state.players[state.currentPlayer];
   const isMyTurn = current?.isHuman;
@@ -151,15 +92,9 @@ const GameControls: React.FC = () => {
 
   if (state.phase === 'setup' || state.players.length === 0) return null;
 
-  const handleQuit = () => {
-    void soundManager.unlock().then(() => soundManager.play('buttonClick'));
-    trackGameQuit(state);
-    dispatch({ type: 'QUIT_GAME' });
-    setConfirmQuit(false);
-  };
-
   return (
     <>
+      <LeaveTableButton />
       <Panel>
         <PhaseBadge>{PHASE_LABELS[state.phase] || state.phase}</PhaseBadge>
         {current && (
@@ -219,36 +154,11 @@ const GameControls: React.FC = () => {
           >
             {isSoundEnabled ? '🔊' : '🔇'}
           </SoundBtn>
-          <QuitBtn type="button" onClick={() => setConfirmQuit(true)}>
-            Leave Table
-          </QuitBtn>
         </RightCluster>
       </Panel>
 
       {showAchievements && (
         <AchievementsPanel onClose={() => setShowAchievements(false)} />
-      )}
-
-      {confirmQuit && (
-        <Modal role="dialog" aria-modal="true" aria-labelledby="quit-title">
-          <ModalBox>
-            <h3 id="quit-title" style={{ margin: '0 0 12px', color: '#ffb4b4' }}>
-              Leave this game?
-            </h3>
-            <p style={{ margin: 0, lineHeight: 1.5, opacity: 0.9 }}>
-              You&apos;ll return to the setup screen. Refreshing the page keeps your current table
-              until you leave.
-            </p>
-            <ModalActions>
-              <ModalBtn type="button" onClick={() => setConfirmQuit(false)}>
-                Keep Playing
-              </ModalBtn>
-              <ModalBtn $variant="danger" type="button" onClick={handleQuit}>
-                Leave Table
-              </ModalBtn>
-            </ModalActions>
-          </ModalBox>
-        </Modal>
       )}
     </>
   );
