@@ -62,6 +62,19 @@ const Header = styled.div`
   }
 `;
 
+const PausedBanner = styled.p`
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 215, 0, 0.14);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  color: #ffd700;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.4;
+`;
+
 const PhaseCallout = styled.div`
   flex-shrink: 0;
   margin-bottom: 12px;
@@ -160,9 +173,16 @@ type RulesModalProps = {
   onClose: () => void;
   houseRules?: HouseRules;
   phase?: GamePhase;
+  /** Show solo pause notice and freeze AI/timers via SoloPauseUiContext. */
+  gamePaused?: boolean;
 };
 
-const RulesModal: React.FC<RulesModalProps> = ({ onClose, houseRules, phase }) => {
+const RulesModal: React.FC<RulesModalProps> = ({
+  onClose,
+  houseRules,
+  phase,
+  gamePaused = false,
+}) => {
   const hint = phase && phase !== 'setup' ? phaseHint(phase) : null;
   const houseSummary = houseRules ? activeHouseRulesSummary(houseRules) : null;
 
@@ -187,6 +207,9 @@ const RulesModal: React.FC<RulesModalProps> = ({ onClose, houseRules, phase }) =
         <Header>
           <h2 id="rules-modal-title">How to Play</h2>
           <p>Pay Cards → Poker → Michigan Rummy</p>
+          {gamePaused && (
+            <PausedBanner role="status">Game paused — close to resume</PausedBanner>
+          )}
         </Header>
 
         {hint && phase && (

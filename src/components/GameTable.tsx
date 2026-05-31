@@ -23,6 +23,7 @@ import SeatLabels from './SeatLabels';
 import { TABLE_BOTTOM_INSET, TABLE_BOTTOM_INSET_PHONE, TABLE_BOTTOM_INSET_TABLET } from './hudLayout';
 import LayoutEditOverlay from './LayoutEditOverlay';
 import { HudLayoutProvider, useHudLayout } from '../context/HudLayoutContext';
+import { SoloPauseUiProvider } from '../context/SoloPauseUiContext';
 import { DEBUG, isDebugActive } from '../debugConfig';
 import { rulesFromPreset, defaultHouseRules } from '../game/engine/houseRules';
 
@@ -334,9 +335,11 @@ const GameTableContent: React.FC = () => {
 
 const GameTable: React.FC = () => (
   <HudLayoutProvider>
-    <PlayerActionTimerProvider>
-      <GameTableContent />
-    </PlayerActionTimerProvider>
+    <SoloPauseUiProvider>
+      <PlayerActionTimerProvider>
+        <GameTableContent />
+      </PlayerActionTimerProvider>
+    </SoloPauseUiProvider>
   </HudLayoutProvider>
 );
 

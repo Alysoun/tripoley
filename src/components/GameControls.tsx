@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useGame } from '../context/GameContext';
 import { PHASE_LABELS } from '../game/engine/constants';
@@ -8,6 +8,7 @@ import { useAchievements } from '../context/AchievementContext';
 import AchievementsPanel from './AchievementsPanel';
 import RulesModal from './RulesModal';
 import { useHudLayout } from '../context/HudLayoutContext';
+import { useSoloPauseUi } from '../context/SoloPauseUiContext';
 import LeaveTableButton from './LeaveTableButton';
 
 const Panel = styled.div`
@@ -86,11 +87,15 @@ const GameControls: React.FC = () => {
   const { unlockedCount } = useAchievements();
   const { toggleSound, isSoundEnabled } = useGameEffects();
   const { layoutEditMode, toggleLayoutEditMode, resetLayout } = useHudLayout();
+  const { rulesModalOpen, setRulesModalOpen } = useSoloPauseUi();
   const [showAchievements, setShowAchievements] = useState(false);
-  const [showRules, setShowRules] = useState(false);
   const current = state.players[state.currentPlayer];
   const isMyTurn = current?.isHuman;
   const isDealer = current?.id === state.dealerId;
+
+  useEffect(() => {
+    return () => setRulesModalOpen(false);
+  }, [setRulesModalOpen]);
 
   if (state.phase === 'setup' || state.players.length === 0) return null;
 
@@ -108,8 +113,8 @@ const GameControls: React.FC = () => {
         <RightCluster>
           <SoundBtn
             type="button"
-            onClick={() => setShowRules(true)}
-            title="How to play"
+            onClick={() => setRulesModalOpen(true)}
+            title={state.isSoloSession ? 'How to play — pauses solo game' : 'How to play'}
             aria-label="How to play — rules"
           >
             ?
@@ -170,11 +175,12 @@ const GameControls: React.FC = () => {
       {showAchievements && (
         <AchievementsPanel onClose={() => setShowAchievements(false)} />
       )}
-      {showRules && (
+      {rulesModalOpen && (
         <RulesModal
-          onClose={() => setShowRules(false)}
+          onClose={() => setRulesModalOpen(false)}
           houseRules={state.houseRules}
           phase={state.phase}
+          gamePaused={!!state.isSoloSession}
         />
       )}
     </>

@@ -9,8 +9,8 @@ import {
   type ReactNode,
 } from 'react';
 import { useGame } from '../context/GameContext';
-import { useHudLayout } from '../context/HudLayoutContext';
 import { useAchievements } from '../context/AchievementContext';
+import { useSoloGamePaused } from '../context/SoloPauseUiContext';
 import {
   getActionTimerHint,
   getPlayerActionTimerKey,
@@ -33,9 +33,8 @@ const TICK_MS = 200;
 
 function usePlayerActionTimerEngine(): PlayerActionTimerState {
   const { state, dispatch } = useGame();
-  const { layoutEditMode } = useHudLayout();
   const { activeEffects, consumeAdrenalineFreeze } = useAchievements();
-  const pausedForLayout = layoutEditMode && !!state.isSoloSession;
+  const soloPaused = useSoloGamePaused();
   const [deadline, setDeadline] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
   const firedRef = useRef(false);
@@ -64,7 +63,7 @@ function usePlayerActionTimerEngine(): PlayerActionTimerState {
 
   useEffect(() => {
     firedRef.current = false;
-    if (!timerKey || pausedForLayout) {
+    if (!timerKey || soloPaused) {
       setDeadline(null);
       setAchievementTimerSnapshot(null);
       return;
@@ -81,11 +80,11 @@ function usePlayerActionTimerEngine(): PlayerActionTimerState {
     activeEffects.adrenalineFreezeMs,
     isSequenceTimer,
     consumeAdrenalineFreeze,
-    pausedForLayout,
+    soloPaused,
   ]);
 
   useEffect(() => {
-    if (pausedForLayout || !deadline || !timerKey) return;
+    if (soloPaused || !deadline || !timerKey) return;
 
     const fire = () => {
       if (firedRef.current) return;
@@ -122,7 +121,7 @@ function usePlayerActionTimerEngine(): PlayerActionTimerState {
       document.removeEventListener('visibilitychange', resume);
       window.removeEventListener('focus', resume);
     };
-  }, [deadline, dispatch, timerKey, pausedForLayout]);
+  }, [deadline, dispatch, timerKey, soloPaused]);
 
   const remainingMs = deadline ? Math.max(0, deadline - now) : null;
   const progress = remainingMs !== null ? remainingMs / totalMs : null;
