@@ -5,16 +5,19 @@ export const ANTE_SECTION_COUNT = POT_SECTION_KEYS.length;
 export const FULL_ANTE_TOTAL = ANTE_PER_SECTION * ANTE_SECTION_COUNT;
 
 /** Place antes in board order until the player runs out of chips. */
-export function distributePlayerAnte(availableChips: number): {
+export function distributePlayerAnte(
+  availableChips: number,
+  antePerSection: number = ANTE_PER_SECTION
+): {
   sections: PotSectionKey[];
   chipsSpent: number;
 } {
   const sections: PotSectionKey[] = [];
   let remaining = Math.max(0, availableChips);
   for (const key of POT_SECTION_KEYS) {
-    if (remaining < ANTE_PER_SECTION) break;
+    if (remaining < antePerSection) break;
     sections.push(key);
-    remaining -= ANTE_PER_SECTION;
+    remaining -= antePerSection;
   }
   return { sections, chipsSpent: availableChips - remaining };
 }
@@ -37,9 +40,10 @@ export function playerEligibleForSectionFromPlayer(
 
 export function applyAnteToPot(
   pot: Record<PotSectionKey, number>,
-  sections: PotSectionKey[]
+  sections: PotSectionKey[],
+  antePerSection: number = ANTE_PER_SECTION
 ): void {
   for (const key of sections) {
-    pot[key] += ANTE_PER_SECTION;
+    pot[key] += antePerSection;
   }
 }

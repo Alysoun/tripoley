@@ -15,6 +15,11 @@ export function formatSessionLogText(state: GameState): string {
     `Exported: ${new Date().toISOString()}`,
     `Players (${state.players.length}): ${state.players.map((p) => p.name).join(', ')}`,
     `House rules: ${summarizeHouseRules(state.houseRules)}`,
+    ...(state.suddenDeath?.active
+      ? [
+          `Sudden Death: active since round ${state.suddenDeath.triggeredAtRound} (${state.suddenDeath.reason})`,
+        ]
+      : []),
     `Round: ${state.roundNumber}`,
     `Phase: ${state.phase}`,
     '---',

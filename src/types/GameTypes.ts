@@ -2,7 +2,9 @@ export type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades';
 export type Rank = 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K';
 
 export type { HouseRules, HouseRulesPreset } from '../game/engine/houseRules';
+export type { SuddenDeathReason, SuddenDeathState } from '../game/engine/suddenDeath';
 import type { HouseRules } from '../game/engine/houseRules';
+import type { SuddenDeathState } from '../game/engine/suddenDeath';
 
 export interface Card {
   suit: Suit;
@@ -134,6 +136,10 @@ export interface GameState {
     leadPassUsed: boolean;
     humanLeadPasses: number;
   };
+  /** Consecutive rounds with exactly two players still in (mercy rule). */
+  twoPlayerStreak?: number;
+  /** Escalated endgame: multiplied antes + mandatory heads-up all-in poker. */
+  suddenDeath?: SuddenDeathState;
 }
 
 export type AnimationKind = 'chipTravel' | 'cardPlay' | 'potSweep' | 'cardDeal';

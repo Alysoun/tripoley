@@ -75,9 +75,14 @@ import {
   ANTE_SECTION_COUNT,
   applyAnteToPot,
   distributePlayerAnte,
-  FULL_ANTE_TOTAL,
   playerEligibleForSectionFromPlayer,
 } from './antes';
+import {
+  planRoundTransition,
+  shouldForceAllInPoker,
+  suddenDeathTriggerMessage,
+  antePerSectionForRound,
+} from './suddenDeath';
 import { michiganRecoveryActions } from './michiganRecovery';
 
 function logPlayerName(player: Player): string {
@@ -228,34 +233,35 @@ function applyChipDelta(players: Player[], deltas: number[]): Player[] {
 
 function collectAntesFromPlayers(state: GameState): GameState {
   const active = inGamePlayers(state);
+  const antePerSection = antePerSectionForRound(state, active.length);
+  const fullAnteTotal = antePerSection * ANTE_SECTION_COUNT;
   let players = [...state.players];
   let pot = clonePot(state.pot);
   const logLines: string[] = [];
 
   for (const p of active) {
-    const { sections, chipsSpent } = distributePlayerAnte(p.chips);
+    const { sections, chipsSpent } = distributePlayerAnte(p.chips, antePerSection);
     players = players.map((x) =>
       x.id === p.id ? { ...x, chips: x.chips - chipsSpent, anteSections: sections } : x
     );
-    applyAnteToPot(pot, sections);
-    if (chipsSpent < FULL_ANTE_TOTAL) {
+    applyAnteToPot(pot, sections, antePerSection);
+    if (chipsSpent < fullAnteTotal) {
       logLines.push(
         `${logPlayerName(p)} antes ${chipsSpent} chip${chipsSpent === 1 ? '' : 's'} (${sections.length}/${ANTE_SECTION_COUNT} sections — short stack)`
       );
     }
   }
 
-  let next = appendLog(
-    { ...state, players, pot },
-    log(
-      active.length > 0
-        ? logLines.length > 0
-          ? logLines.join('; ')
-          : `Each active player antes ${FULL_ANTE_TOTAL} chips across the board`
-        : 'No active players remain to ante',
-      'info'
-    )
-  );
+  const anteSummary =
+    active.length === 0
+      ? 'No active players remain to ante'
+      : logLines.length > 0
+        ? logLines.join('; ')
+        : state.suddenDeath?.active
+          ? `Each active player antes ${fullAnteTotal} chips across the board (Sudden Death ${antePerSection}× per section)`
+          : `Each active player antes ${fullAnteTotal} chips across the board`;
+
+  let next = appendLog({ ...state, players, pot }, log(anteSummary, 'info'));
   for (const p of active) {
     const sections = players.find((x) => x.id === p.id)?.anteSections ?? [];
     const animSection = sections.includes('pot') ? 'pot' : sections[sections.length - 1] ?? 'pot';
@@ -347,6 +353,9 @@ function startPayCardsPhase(state: GameState): GameState {
 }
 
 function startPokerPhase(state: GameState): GameState {
+  if (shouldForceAllInPoker(state)) {
+    return forceSuddenDeathAllInPoker(state);
+  }
   return appendLog(
     {
       ...state,
@@ -356,6 +365,63 @@ function startPokerPhase(state: GameState): GameState {
     },
     log('Poker phase — betting begins left of dealer', 'info')
   );
+}
+
+function forceSuddenDeathAllInPoker(state: GameState): GameState {
+  const active = inGamePlayers(state);
+  if (active.length !== 2) {
+    return appendLog(
+      {
+        ...state,
+        phase: 'poker',
+        currentPlayer: firstLeftOfDealer(state),
+        poker: createInitialPokerState(state.players.length),
+      },
+      log('Poker phase — betting begins left of dealer', 'info')
+    );
+  }
+
+  let next: GameState = {
+    ...state,
+    phase: 'poker',
+    players: [...state.players],
+    pot: clonePot(state.pot),
+    poker: createInitialPokerState(state.players.length),
+    currentPlayer: firstLeftOfDealer(state),
+  };
+  const commits: string[] = [];
+
+  for (const p of active) {
+    const bet = p.chips;
+    if (bet <= 0) continue;
+    next = {
+      ...next,
+      players: next.players.map((x) => (x.id === p.id ? { ...x, chips: 0 } : x)),
+      pot: { ...next.pot, pot: next.pot.pot + bet },
+      poker: {
+        ...next.poker,
+        playerBets: { ...next.poker.playerBets, [p.id]: bet },
+        acted: { ...next.poker.acted, [p.id]: true },
+      },
+    };
+    commits.push(`${logPlayerName(p)} ${bet}`);
+    next = chipFromHumanOrPlayerToPot(next, p, 'pot', Math.min(bet, 6));
+  }
+
+  next = {
+    ...next,
+    poker: {
+      ...next.poker,
+      currentBet: Math.max(...active.map((p) => next.poker.playerBets[p.id] || 0), 0),
+    },
+  };
+
+  next = appendLog(
+    next,
+    log(`Sudden Death all-in — ${commits.join(' vs ')}`, 'success')
+  );
+
+  return resolvePokerShowdown(next);
 }
 
 function advancePokerTurn(state: GameState): GameState {
@@ -618,6 +684,7 @@ function handlePokerAction(
   let next = state;
 
   if (action === 'fold') {
+    if (shouldForceAllInPoker(state)) return state;
     poker.folded[player.id] = true;
     next = appendLog({ ...state, poker }, log(`${logPlayerName(player)} folds`, 'info'));
     return advancePokerTurn(next);
@@ -1273,6 +1340,7 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
       const playerCount = state.players.length;
       const active = inGamePlayers(state);
       if (active.length <= 1) return state;
+      const transition = planRoundTransition(state);
       const newDealerId = nextInGameDealer(state);
       const activeSeatIds = active.map((p) => p.id);
       const { playerHands, deadHand } = dealHandsFiltered(
@@ -1294,6 +1362,8 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
         phase: 'dealerBlindChoice',
         currentPlayer: newDealerId,
         roundNumber: state.roundNumber + 1,
+        twoPlayerStreak: transition.twoPlayerStreak,
+        suddenDeath: transition.suddenDeath,
         payCardClaims: [],
         michigan: createMichiganState(),
         poker: createInitialPokerState(playerCount),
@@ -1307,6 +1377,12 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
           ? { sequenceTimedOut: false, leadPassUsed: false, humanLeadPasses: 0 }
           : undefined,
       };
+      if (transition.suddenDeathActivated && transition.suddenDeathReason) {
+        next = appendLog(
+          next,
+          log(suddenDeathTriggerMessage(transition.suddenDeathReason), 'success')
+        );
+      }
       next = collectAntesFromPlayers(next);
       next = dealAnimationsForRound(next);
       return appendLog(next, log(`Round ${next.roundNumber} — ${logPlayerName(players[newDealerId])} deals`, 'info'));

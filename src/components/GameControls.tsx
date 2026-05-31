@@ -46,6 +46,21 @@ const PhaseBadge = styled.div`
   }
 `;
 
+const SuddenDeathBadge = styled.div`
+  background: rgba(120, 20, 20, 0.92);
+  color: #ffb4b4;
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 120, 120, 0.75);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 0.88rem;
+  }
+`;
+
 const TurnBadge = styled.div`
   background: rgba(0, 0, 0, 0.75);
   color: white;
@@ -104,6 +119,11 @@ const GameControls: React.FC = () => {
       <LeaveTableButton />
       <Panel>
         <PhaseBadge>{PHASE_LABELS[state.phase] || state.phase}</PhaseBadge>
+        {state.suddenDeath?.active && (
+          <SuddenDeathBadge title="Escalated endgame — multiplied antes and all-in poker">
+            Sudden Death
+          </SuddenDeathBadge>
+        )}
         {current && (
           <TurnBadge>
             {isMyTurn ? 'Your turn' : `${displayPlayerName(current!)}'s turn`}
