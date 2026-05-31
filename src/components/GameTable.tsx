@@ -115,15 +115,15 @@ const TableStack = styled.div`
   transform-style: preserve-3d;
 
   @media (max-width: 768px) {
-    width: min(92vw, 980px);
-    max-height: min(62vh, 560px);
-    transform: translateY(-1vh);
+    width: min(88vw, 980px);
+    max-height: min(48vh, 480px);
+    transform: translateY(-4vh);
   }
 
   @media (max-width: 480px) {
-    width: min(96vw, 980px);
-    max-height: min(52vh, 440px);
-    transform: translateY(0);
+    width: min(92vw, 980px);
+    max-height: min(42vh, 400px);
+    transform: translateY(-2vh);
   }
 `;
 

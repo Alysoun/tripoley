@@ -507,13 +507,18 @@ const PlayerHUD: React.FC = () => {
                 data-fan-dragging={dragging ? '1' : '0'}
                 data-fan-playable={playable ? '1' : '0'}
                 data-fan-hovered={hovered ? '1' : '0'}
-                draggable
-                onMouseEnter={() => setHoverIndex(index)}
-                onMouseLeave={() => setHoverIndex((prev) => (prev === index ? null : prev))}
+                draggable={!hudGroupActive}
+                onMouseEnter={() => !hudGroupActive && setHoverIndex(index)}
+                onMouseLeave={() => !hudGroupActive && setHoverIndex((prev) => (prev === index ? null : prev))}
                 onPointerDown={(e) => {
+                  if (hudGroupActive) return;
                   clickStart.current = { x: e.clientX, y: e.clientY };
                 }}
                 onDragStart={(e) => {
+                  if (hudGroupActive) {
+                    e.preventDefault();
+                    return;
+                  }
                   didReorder.current = false;
                   setDragIndex(index);
                   if (canPlayMichigan && isPlayable(card)) {

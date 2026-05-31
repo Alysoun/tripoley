@@ -6,7 +6,9 @@ import {
   LAYOUT_EDIT_GROUP_HINTS,
   LAYOUT_EDIT_GROUP_LABELS,
   LAYOUT_EDIT_GROUP_ORDER,
+  MAX_HAND_SCALE,
   MAX_SEAT_LABEL_SCALE,
+  MIN_HAND_SCALE,
   MIN_SEAT_LABEL_SCALE,
 } from './hudPanelLayout';
 
@@ -87,7 +89,7 @@ const ScaleControl = styled.label`
 
 const LayoutEditOverlay: React.FC = () => {
   const { state } = useGame();
-  const { layoutEditMode, layoutEditGroup, setLayoutEditGroup, seatLabelScale, setSeatLabelScale } =
+  const { layoutEditMode, layoutEditGroup, setLayoutEditGroup, seatLabelScale, setSeatLabelScale, handScale, setHandScale } =
     useHudLayout();
 
   if (!layoutEditMode || !state.isSoloSession) return null;
@@ -113,6 +115,21 @@ const LayoutEditOverlay: React.FC = () => {
           ))}
         </GroupRow>
         <Hint>{LAYOUT_EDIT_GROUP_HINTS[layoutEditGroup]}</Hint>
+        {layoutEditGroup === 'hud' && (
+          <ScaleControl>
+            Hand size
+            <input
+              type="range"
+              min={MIN_HAND_SCALE}
+              max={MAX_HAND_SCALE}
+              step={0.05}
+              value={handScale}
+              onChange={(e) => setHandScale(Number(e.target.value))}
+              aria-label="Hand size"
+            />
+            {Math.round(handScale * 100)}%
+          </ScaleControl>
+        )}
         {layoutEditGroup === 'opponents' && (
           <ScaleControl>
             Opponent label size

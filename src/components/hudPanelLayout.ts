@@ -15,7 +15,7 @@ export const LAYOUT_EDIT_GROUP_LABELS: Record<LayoutEditGroup, string> = {
 };
 
 export const LAYOUT_EDIT_GROUP_HINTS: Record<LayoutEditGroup, string> = {
-  hud: 'Drag your seat info, hand, and action buttons. Resize the hand with the corner grip.',
+  hud: 'Drag panel handles to reposition. Use the hand size slider below (easier on touch than the corner grip).',
   log: 'Drag the game log panel. Use ▾ to collapse it if it blocks the table.',
   opponents: 'Drag opponent name labels within the blue box around each seat.',
   pot: 'Drag pot chip labels within the dashed range around each gold anchor.',
@@ -93,8 +93,22 @@ export const HUD_PANEL_Z_BASE: Record<HudPanelId, number> = {
 };
 
 export const DEFAULT_HAND_SCALE = 1;
+export const DEFAULT_HAND_SCALE_TABLET = 0.88;
+export const DEFAULT_HAND_SCALE_PHONE = 0.78;
 export const MIN_HAND_SCALE = 0.75;
 export const MAX_HAND_SCALE = 2.25;
+
+export type ClampPanelOptions = {
+  /** Looser bounds while repositioning in layout mode. */
+  editing?: boolean;
+  handScale?: number;
+};
+
+export function defaultHandScaleForViewport(width = viewportWidth()): number {
+  if (width <= 480) return DEFAULT_HAND_SCALE_PHONE;
+  if (width <= 768) return DEFAULT_HAND_SCALE_TABLET;
+  return DEFAULT_HAND_SCALE;
+}
 
 export function clampHandScale(scale: number): number {
   return Math.min(MAX_HAND_SCALE, Math.max(MIN_HAND_SCALE, scale));
@@ -115,20 +129,45 @@ export function viewportHeight(): number {
   return typeof window !== 'undefined' ? window.innerHeight : 800;
 }
 
+/** Top of draggable region — clears layout banner while editing. */
+export function layoutEditTopInset(): number {
+  return 168;
+}
+
+/** Minimal bottom margin while editing so panels can sit near the screen edge. */
+export function layoutEditBottomInset(): number {
+  return 12;
+}
+
 /** Keep bottom HUD panels above the hand area and device safe area. */
 export function hudSafeAreaBottom(): number {
   const w = viewportWidth();
   const h = viewportHeight();
-  if (w <= 480) return 92;
-  if (w <= 768 || h <= 620) return 76;
-  return 56;
+  if (w <= 480) return 48;
+  if (w <= 768 || h <= 620) return 40;
+  return 32;
 }
 
-const PANEL_HEIGHT_ESTIMATE: Record<HudPanelId, number> = {
-  info: 132,
-  hand: 168,
-  actions: 240,
-};
+function panelHeightEstimate(id: HudPanelId, handScale = DEFAULT_HAND_SCALE, editing = false): number {
+  if (editing) {
+    switch (id) {
+      case 'info':
+        return 72;
+      case 'hand':
+        return 36;
+      case 'actions':
+        return 64;
+    }
+  }
+
+  if (id === 'hand') {
+    return Math.ceil(112 * handScale) + 28;
+  }
+  if (id === 'actions') {
+    return 160;
+  }
+  return 120;
+}
 
 const PANEL_WIDTH_ESTIMATE: Record<HudPanelId, number> = {
   info: 320,
@@ -136,25 +175,52 @@ const PANEL_WIDTH_ESTIMATE: Record<HudPanelId, number> = {
   actions: 560,
 };
 
-export function clampPanelPosition(id: HudPanelId, position: PanelPosition): PanelPosition {
+export function clampPanelPosition(
+  id: HudPanelId,
+  position: PanelPosition,
+  options: ClampPanelOptions = {}
+): PanelPosition {
   const w = viewportWidth();
   const h = viewportHeight();
-  const top = 52;
-  const bottom = hudSafeAreaBottom();
-  const height = PANEL_HEIGHT_ESTIMATE[id];
+  const editing = options.editing ?? false;
+  const handScale = options.handScale ?? DEFAULT_HAND_SCALE;
+  const top = editing ? layoutEditTopInset() : 52;
+  const bottom = editing ? layoutEditBottomInset() : hudSafeAreaBottom();
+  const height = panelHeightEstimate(id, handScale, editing);
   const width = PANEL_WIDTH_ESTIMATE[id];
+
+  const maxY = editing
+    ? Math.max(top, h - bottom - Math.min(height, 48))
+    : Math.max(top, h - bottom - height);
 
   return {
     x: Math.min(Math.max(8, position.x), Math.max(8, w - width - 8)),
-    y: Math.min(Math.max(top, position.y), Math.max(top, h - bottom - height)),
+    y: Math.min(Math.max(top, position.y), maxY),
   };
 }
 
-export function clampHudLayout(layout: HudLayout): HudLayout {
+export function hudPanelDragBounds(
+  options: ClampPanelOptions = {}
+): { left: number; top: number; right: number; bottom: number } {
+  const w = viewportWidth();
+  const h = viewportHeight();
+  const editing = options.editing ?? false;
+  const top = editing ? layoutEditTopInset() : 52;
+  const bottom = editing ? layoutEditBottomInset() : hudSafeAreaBottom();
+
   return {
-    info: clampPanelPosition('info', layout.info),
-    hand: clampPanelPosition('hand', layout.hand),
-    actions: clampPanelPosition('actions', layout.actions),
+    left: 8,
+    top,
+    right: Math.max(8, w - 48),
+    bottom: Math.max(top, h - bottom),
+  };
+}
+
+export function clampHudLayout(layout: HudLayout, options: ClampPanelOptions = {}): HudLayout {
+  return {
+    info: clampPanelPosition('info', layout.info, options),
+    hand: clampPanelPosition('hand', layout.hand, options),
+    actions: clampPanelPosition('actions', layout.actions, options),
   };
 }
 
@@ -171,43 +237,47 @@ export function defaultHudLayout(): HudLayout {
   const tablet = w <= 768;
   const landscape = w > h;
   const shortViewport = h <= 520 || (landscape && h <= 680);
+  const topInset = narrow || tablet || shortViewport ? 56 : 96;
 
   const bottomHandY = shortViewport
-    ? Math.max(88, h - (narrow ? 128 : 142))
+    ? Math.max(topInset, h - (narrow ? 118 : 128))
     : narrow
-      ? Math.max(96, h - 132)
+      ? Math.max(topInset, h - 120)
       : tablet
-        ? Math.max(108, h - 148)
+        ? Math.max(topInset, h - 132)
         : Math.max(120, h - 156);
   const bottomInfoY = shortViewport
-    ? 56
+    ? topInset
     : narrow
-      ? Math.max(88, h - 124)
+      ? topInset
       : tablet
-        ? Math.max(96, h - 136)
+        ? topInset
         : Math.max(96, h - 148);
   const bottomActionsY = shortViewport
-    ? Math.max(72, h - (narrow ? 292 : 312))
+    ? Math.max(topInset, h - (narrow ? 248 : 268))
     : narrow
-      ? Math.max(88, h - 300)
+      ? Math.max(topInset, h - 248)
       : tablet
-        ? Math.max(96, h - 320)
+        ? Math.max(topInset, h - 268)
         : Math.max(96, h - 340);
 
-  return clampHudLayout({
-    info: { x: narrow ? 8 : 16, y: bottomInfoY },
-    hand: { x: Math.round(w / 2 - (narrow ? 120 : 160)), y: bottomHandY },
-    actions: {
-      x: Math.round(w / 2 - (narrow ? 150 : shortViewport ? 200 : 280)),
-      y: bottomActionsY,
+  return clampHudLayout(
+    {
+      info: { x: narrow ? 8 : 16, y: bottomInfoY },
+      hand: { x: Math.round(w / 2 - (narrow ? 120 : 160)), y: bottomHandY },
+      actions: {
+        x: Math.round(w / 2 - (narrow ? 150 : shortViewport ? 200 : 280)),
+        y: bottomActionsY,
+      },
     },
-  });
+    { handScale: defaultHandScaleForViewport(w) }
+  );
 }
 
 export function defaultStoredHudLayout(): StoredHudLayout {
   return {
     panels: defaultHudLayout(),
-    handScale: DEFAULT_HAND_SCALE,
+    handScale: defaultHandScaleForViewport(),
     potLabelOffsets: defaultPotLabelOffsets(),
     seatLabelScale: defaultSeatLabelScaleForViewport(),
     seatLabelOffsets: defaultSeatLabelOffsets(),
@@ -238,7 +308,7 @@ export function loadStoredHudLayout(): StoredHudLayout {
       return {
         panels: clampHudLayout({ ...defaultHudLayout(), ...parsed.panels }),
         handScale: clampHandScale(
-          typeof parsed.handScale === 'number' ? parsed.handScale : DEFAULT_HAND_SCALE
+          typeof parsed.handScale === 'number' ? parsed.handScale : defaultHandScaleForViewport()
         ),
         potLabelOffsets: {
           ...defaultPotLabelOffsets(),

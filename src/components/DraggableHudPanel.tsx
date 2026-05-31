@@ -1,7 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
-import Draggable from 'react-draggable';
-import { HudPanelId, clampPanelPosition } from './hudPanelLayout';
+import Draggable, { DraggableData } from 'react-draggable';
+import { HudPanelId, clampPanelPosition, hudPanelDragBounds, viewportHeight, viewportWidth } from './hudPanelLayout';
 import { useHudLayout } from '../context/HudLayoutContext';
 
 type DraggableHudPanelProps = {
@@ -27,6 +27,7 @@ const PanelShell = styled.div<{
   opacity: ${(p) => (p.$dimmed ? 0.38 : 1)};
   pointer-events: ${(p) => (p.$dimmed ? 'none' : 'auto')};
   transition: opacity 0.15s ease;
+  overflow: visible;
   ${(p) =>
     p.$variant === 'glass'
       ? `
@@ -52,12 +53,13 @@ const DragHandle = styled.div<{ $variant: 'glass' | 'minimal' }>`
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: ${(p) => (p.$variant === 'minimal' ? '4px 10px' : '6px 10px')};
+  padding: ${(p) => (p.$variant === 'minimal' ? '8px 12px' : '8px 12px')};
+  min-height: 44px;
   border-radius: ${(p) => (p.$variant === 'minimal' ? '8px' : '10px 10px 0 0')};
   background: rgba(0, 0, 0, 0.72);
   border: 1px solid rgba(255, 215, 0, 0.28);
   color: rgba(255, 215, 0, 0.9);
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.02em;
   cursor: grab;
@@ -74,6 +76,7 @@ const PanelBody = styled.div<{ $variant: 'glass' | 'minimal'; $editMode: boolean
     if (p.$variant === 'minimal') return p.$editMode ? '4px 0 0' : '0';
     return p.$editMode ? '8px 12px 10px' : '10px 12px';
   }};
+  overflow: visible;
   ${(p) =>
     p.$scrollable
       ? `
@@ -100,21 +103,62 @@ const DraggableHudPanel: React.FC<DraggableHudPanelProps> = ({
   className,
 }) => {
   const nodeRef = useRef<HTMLDivElement>(null);
-  const { layout, layoutEditMode, isEditingLayoutGroup, setPanelPosition, focusPanel, panelZIndex } =
-    useHudLayout();
+  const {
+    layout,
+    handScale,
+    layoutEditMode,
+    isEditingLayoutGroup,
+    setPanelPosition,
+    focusPanel,
+    panelZIndex,
+  } = useHudLayout();
   const position = layout[id];
   const groupActive = isEditingLayoutGroup('hud');
   const dimmed = layoutEditMode && !groupActive;
+  const [viewport, setViewport] = useState(() => ({
+    w: viewportWidth(),
+    h: viewportHeight(),
+  }));
+
+  useEffect(() => {
+    const update = () => setViewport({ w: viewportWidth(), h: viewportHeight() });
+    window.addEventListener('resize', update);
+    window.addEventListener('orientationchange', update);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', update);
+    };
+  }, []);
+
+  const dragBounds = useMemo(
+    () => (groupActive ? hudPanelDragBounds({ editing: true, handScale }) : undefined),
+    [groupActive, handScale, viewport.w, viewport.h]
+  );
+
+  const commitPosition = useCallback(
+    (data: DraggableData) => {
+      setPanelPosition(
+        id,
+        clampPanelPosition(
+          id,
+          { x: data.x, y: data.y },
+          { editing: true, handScale }
+        )
+      );
+    },
+    [handScale, id, setPanelPosition]
+  );
 
   return (
     <Draggable
       nodeRef={nodeRef}
       handle=".hud-drag-handle"
       disabled={!groupActive}
+      bounds={dragBounds}
       position={position}
       onStart={() => focusPanel(id)}
       onStop={(_, data) => {
-        setPanelPosition(id, clampPanelPosition(id, { x: data.x, y: data.y }));
+        commitPosition(data);
         focusPanel(null);
       }}
     >

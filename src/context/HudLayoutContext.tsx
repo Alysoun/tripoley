@@ -86,18 +86,30 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, []);
 
-  const setPanelPosition = useCallback((id: HudPanelId, position: PanelPosition) => {
-    setStored((prev) => ({
-      ...prev,
-      panels: { ...prev.panels, [id]: clampPanelPosition(id, position) },
-    }));
-  }, []);
+  const setPanelPosition = useCallback(
+    (id: HudPanelId, position: PanelPosition) => {
+      setStored((prev) => ({
+        ...prev,
+        panels: {
+          ...prev.panels,
+          [id]: clampPanelPosition(id, position, {
+            editing: layoutEditMode,
+            handScale: prev.handScale,
+          }),
+        },
+      }));
+    },
+    [layoutEditMode]
+  );
 
   useEffect(() => {
     const onResize = () => {
       setStored((prev) => ({
         ...prev,
-        panels: clampHudLayout(prev.panels),
+        panels: clampHudLayout(prev.panels, {
+          editing: layoutEditMode,
+          handScale: prev.handScale,
+        }),
       }));
     };
     window.addEventListener('resize', onResize);
@@ -106,7 +118,7 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       window.removeEventListener('resize', onResize);
       window.removeEventListener('orientationchange', onResize);
     };
-  }, []);
+  }, [layoutEditMode]);
 
   const setPotLabelOffset = useCallback((label: SectionLabel, offset: PotLabelOffset) => {
     setStored((prev) => ({

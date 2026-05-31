@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import Draggable, { DraggableData } from 'react-draggable';
 import { useGame } from '../context/GameContext';
 import { useHudLayout } from '../context/HudLayoutContext';
-import { hudSafeAreaBottom, viewportHeight, viewportWidth } from './hudPanelLayout';
+import { hudSafeAreaBottom, layoutEditBottomInset, layoutEditTopInset, viewportHeight, viewportWidth } from './hudPanelLayout';
 
 const STORAGE_KEY = 'tripoley-game-log-layout';
 
@@ -30,7 +30,7 @@ function defaultLayout(): LogLayout {
   };
 }
 
-function clampLayout(layout: LogLayout): LogLayout {
+function clampLayout(layout: LogLayout, editing = false): LogLayout {
   const w = viewportWidth();
   const h = viewportHeight();
   const width = Math.min(Math.max(180, layout.width), 360);
@@ -38,12 +38,15 @@ function clampLayout(layout: LogLayout): LogLayout {
     ? 40
     : Math.min(Math.max(90, layout.height), Math.min(280, h - 120));
   const maxX = Math.max(0, w - width - 8);
-  const maxY = Math.max(56, h - hudSafeAreaBottom() - height);
+  const top = editing ? layoutEditTopInset() : 56;
+  const maxY = editing
+    ? Math.max(top, h - layoutEditBottomInset() - (layout.collapsed ? 36 : 48))
+    : Math.max(56, h - hudSafeAreaBottom() - height);
 
   return {
     ...layout,
     x: Math.min(Math.max(0, layout.x), maxX),
-    y: Math.min(Math.max(56, layout.y), maxY),
+    y: Math.min(Math.max(top, layout.y), maxY),
     width,
     height,
     collapsed: layout.collapsed,
@@ -182,7 +185,7 @@ const GameLog: React.FC = () => {
   const [layout, setLayout] = useState<LogLayout>(() => layoutRef.current);
 
   const persistLayout = useCallback((next: LogLayout) => {
-    const clamped = clampLayout(next);
+    const clamped = clampLayout(next, groupActive);
     layoutRef.current = clamped;
     setLayout(clamped);
     if (saveTimerRef.current !== null) {
@@ -192,7 +195,7 @@ const GameLog: React.FC = () => {
       saveLayout(clamped);
       saveTimerRef.current = null;
     }, 120);
-  }, []);
+  }, [groupActive]);
 
   useEffect(() => {
     return () => {
@@ -244,11 +247,21 @@ const GameLog: React.FC = () => {
 
   if (state.phase === 'setup') return null;
 
+  const logBounds = groupActive
+    ? {
+        left: 8,
+        top: layoutEditTopInset(),
+        right: Math.max(8, viewportWidth() - 48),
+        bottom: Math.max(layoutEditTopInset(), viewportHeight() - layoutEditBottomInset()),
+      }
+    : undefined;
+
   return (
     <Draggable
       nodeRef={nodeRef}
       handle=".log-drag-handle"
       disabled={!groupActive}
+      bounds={logBounds}
       position={{ x: layout.x, y: layout.y }}
       onDrag={onDrag}
       onStop={onDrag}

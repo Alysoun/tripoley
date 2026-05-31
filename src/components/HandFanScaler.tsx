@@ -16,33 +16,37 @@ const Wrap = styled.div<{ $width: number; $height: number }>`
   width: ${(p) => p.$width}px;
   height: ${(p) => p.$height}px;
   margin: 0 auto;
+  overflow: visible;
 `;
 
-const ScaledInner = styled.div<{ $scale: number }>`
+const ScaledInner = styled.div<{ $scale: number; $editMode?: boolean }>`
   position: absolute;
   left: 0;
   bottom: 0;
   transform: scale(${(p) => p.$scale});
   transform-origin: left bottom;
   transform-style: preserve-3d;
+  pointer-events: ${(p) => (p.$editMode ? 'none' : 'auto')};
 `;
 
 const ResizeGrip = styled.button`
   position: absolute;
-  right: -2px;
-  bottom: -2px;
-  width: 20px;
-  height: 20px;
+  right: 0;
+  top: -52px;
+  width: 48px;
+  height: 48px;
   padding: 0;
-  border: 1px solid rgba(255, 215, 0, 0.65);
-  border-radius: 0 0 8px 0;
-  background: rgba(0, 0, 0, 0.82);
+  border: 2px solid rgba(255, 215, 0, 0.75);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.92);
   color: rgba(255, 215, 0, 0.95);
   cursor: nwse-resize;
   touch-action: none;
-  font-size: 0.72rem;
+  font-size: 1.1rem;
   line-height: 1;
-  z-index: 5;
+  z-index: 300;
+  pointer-events: auto;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
 
   &:hover {
     background: rgba(40, 32, 0, 0.95);
@@ -51,15 +55,15 @@ const ResizeGrip = styled.button`
 
 const ScaleHint = styled.div`
   position: absolute;
-  right: 0;
-  top: -22px;
-  font-size: 0.68rem;
+  right: 52px;
+  top: -40px;
+  font-size: 0.72rem;
   color: rgba(255, 215, 0, 0.85);
   white-space: nowrap;
   pointer-events: none;
 `;
 
-const SCALE_DRAG_SENSITIVITY = 0.0045;
+const SCALE_DRAG_SENSITIVITY = 0.0065;
 
 const HandFanScaler: React.FC<HandFanScalerProps> = ({
   scale,
@@ -88,6 +92,7 @@ const HandFanScaler: React.FC<HandFanScalerProps> = ({
   const onResizePointerMove = useCallback(
     (event: React.PointerEvent<HTMLButtonElement>) => {
       if (!dragRef.current) return;
+      event.stopPropagation();
       const { startX, startY, startScale } = dragRef.current;
       const deltaX = event.clientX - startX;
       const deltaY = event.clientY - startY;
@@ -99,6 +104,7 @@ const HandFanScaler: React.FC<HandFanScalerProps> = ({
 
   const onResizePointerUp = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
     dragRef.current = null;
+    event.stopPropagation();
     event.currentTarget.releasePointerCapture(event.pointerId);
   }, []);
 
@@ -107,7 +113,9 @@ const HandFanScaler: React.FC<HandFanScalerProps> = ({
 
   return (
     <Wrap $width={visualWidth} $height={visualHeight}>
-      <ScaledInner $scale={scale}>{children}</ScaledInner>
+      <ScaledInner $scale={scale} $editMode={editMode}>
+        {children}
+      </ScaledInner>
       {editMode && (
         <>
           <ScaleHint>{Math.round(scale * 100)}%</ScaleHint>
