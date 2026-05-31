@@ -1,5 +1,5 @@
 import type { GameState } from '../types/GameTypes';
-import { initialGameState } from './engine/reducer';
+import { initialGameState, repairLoadedGameSession } from './engine/reducer';
 
 /** Persists in-progress games across browser restarts (localStorage). */
 const STORAGE_KEY = 'tripoley-active-session';
@@ -69,8 +69,9 @@ function migrateLegacySession(): GameState | null {
 
 export function loadGameSession(): GameState | null {
   const fromLocal = parseStored(readRaw(STORAGE_KEY));
-  if (fromLocal) return fromLocal;
-  return migrateLegacySession();
+  const loaded = fromLocal ?? migrateLegacySession();
+  if (!loaded) return null;
+  return repairLoadedGameSession(loaded);
 }
 
 export function saveGameSession(state: GameState): void {

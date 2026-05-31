@@ -270,6 +270,34 @@ function collectAntesFromPlayers(state: GameState): GameState {
   return next;
 }
 
+/** Dealer can be busted by short-stack antes right after deal — they cannot act on blind choice. */
+function resolveBustedDealerBlindChoice(state: GameState): GameState {
+  if (state.phase !== 'dealerBlindChoice') return state;
+  const dealer = state.players[state.dealerId];
+  if (!dealer || !isEliminated(dealer)) return state;
+  return startPayCardsPhase(
+    appendLog(
+      state,
+      log(
+        `${logPlayerName(dealer)} is out — skipping dealer blind choice`,
+        'info'
+      )
+    )
+  );
+}
+
+/** Fix known soft-lock states when restoring a saved session (e.g. busted dealer mid-blind). */
+export function repairLoadedGameSession(state: GameState): GameState {
+  let next = resolveBustedDealerBlindChoice(state);
+  if (next.phase === 'dealerBlindChoice') {
+    const dealer = next.players[next.dealerId];
+    if (dealer && !isEliminated(dealer) && next.currentPlayer !== next.dealerId) {
+      next = { ...next, currentPlayer: next.dealerId };
+    }
+  }
+  return next;
+}
+
 function startPayCardsPhase(state: GameState): GameState {
   if (state.houseRules.payCardsOnMichiganPlay) {
     return appendLog(
@@ -722,7 +750,10 @@ function completeBlindAuction(state: GameState): GameState {
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   const next = reduceGameState(state, action);
-  if (next !== state) return finalizePlayerStatus(next, state);
+  if (next !== state) {
+    const resolved = resolveBustedDealerBlindChoice(next);
+    return finalizePlayerStatus(resolved, state);
+  }
 
   if (
     state.phase === 'michigan' &&

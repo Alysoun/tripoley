@@ -60,6 +60,8 @@ function autoFoldEliminated(state: GameState): GameState {
 function skipEliminatedCurrentPlayer(state: GameState): GameState {
   const current = state.players[state.currentPlayer];
   if (!isEliminated(current)) return state;
+  // Busted dealer after short-stack antes — resolveBustedDealerBlindChoice handles the phase.
+  if (state.phase === 'dealerBlindChoice') return state;
   // Busted players still play out Michigan if they hold cards (sequence / kitty).
   if (state.phase === 'michigan' && current.cards.length > 0) return state;
   const nextId = nextInGamePlayer(state, state.currentPlayer);
