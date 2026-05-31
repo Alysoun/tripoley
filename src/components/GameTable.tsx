@@ -21,6 +21,7 @@ import { potBoardToDisplaySections } from '../game/engine/reducer';
 import SeatAnchors from './SeatAnchors';
 import SeatLabels from './SeatLabels';
 import { TABLE_BOTTOM_INSET, TABLE_BOTTOM_INSET_PHONE, TABLE_BOTTOM_INSET_TABLET } from './hudLayout';
+import LayoutEditOverlay from './LayoutEditOverlay';
 import { HudLayoutProvider, useHudLayout } from '../context/HudLayoutContext';
 import { DEBUG, isDebugActive } from '../debugConfig';
 import { rulesFromPreset, defaultHouseRules } from '../game/engine/houseRules';
@@ -275,6 +276,7 @@ const GameTableContent: React.FC = () => {
     <TableContainer>
       <GameControls />
       <GameLog />
+      <LayoutEditOverlay />
       <GameOverModal />
       <PhaseAnnouncementModal />
       <AnimationLayer />
@@ -328,11 +330,11 @@ const GameTableContent: React.FC = () => {
 };
 
 const GameTable: React.FC = () => (
-  <PlayerActionTimerProvider>
-    <HudLayoutProvider>
+  <HudLayoutProvider>
+    <PlayerActionTimerProvider>
       <GameTableContent />
-    </HudLayoutProvider>
-  </PlayerActionTimerProvider>
+    </PlayerActionTimerProvider>
+  </HudLayoutProvider>
 );
 
 export default GameTable;

@@ -9,6 +9,8 @@ import React, {
 import {
   clearStoredHudLayout,
   clampHandScale,
+  clampHudLayout,
+  clampPanelPosition,
   clampPotLabelOffset,
   clampSeatLabelOffset,
   clampSeatLabelScale,
@@ -68,8 +70,23 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const setPanelPosition = useCallback((id: HudPanelId, position: PanelPosition) => {
     setStored((prev) => ({
       ...prev,
-      panels: { ...prev.panels, [id]: position },
+      panels: { ...prev.panels, [id]: clampPanelPosition(id, position) },
     }));
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => {
+      setStored((prev) => ({
+        ...prev,
+        panels: clampHudLayout(prev.panels),
+      }));
+    };
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
   }, []);
 
   const setPotLabelOffset = useCallback((label: SectionLabel, offset: PotLabelOffset) => {

@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import Draggable, { DraggableData } from 'react-draggable';
 import { useGame } from '../context/GameContext';
+import { useHudLayout } from '../context/HudLayoutContext';
+import { hudSafeAreaBottom, viewportHeight, viewportWidth } from './hudPanelLayout';
 
 const STORAGE_KEY = 'tripoley-game-log-layout';
 
@@ -14,24 +16,37 @@ type LogLayout = {
 };
 
 function defaultLayout(): LogLayout {
+  const w = viewportWidth();
+  const h = viewportHeight();
+  const tablet = w <= 768;
+  const height = tablet ? 112 : 130;
+
   return {
-    x: 16,
-    y: Math.max(100, window.innerHeight - 360),
-    width: 220,
-    height: 130,
+    x: tablet ? Math.max(8, w - 228) : 16,
+    y: tablet ? Math.max(56, 72) : Math.max(100, h - 360),
+    width: tablet ? 208 : 220,
+    height,
     collapsed: false,
   };
 }
 
 function clampLayout(layout: LogLayout): LogLayout {
-  const maxX = Math.max(0, window.innerWidth - Math.min(layout.width, 360) - 8);
-  const maxY = Math.max(0, window.innerHeight - 48);
+  const w = viewportWidth();
+  const h = viewportHeight();
+  const width = Math.min(Math.max(180, layout.width), 360);
+  const height = layout.collapsed
+    ? 40
+    : Math.min(Math.max(90, layout.height), Math.min(280, h - 120));
+  const maxX = Math.max(0, w - width - 8);
+  const maxY = Math.max(56, h - hudSafeAreaBottom() - height);
+
   return {
     ...layout,
     x: Math.min(Math.max(0, layout.x), maxX),
-    y: Math.min(Math.max(0, layout.y), maxY),
-    width: Math.min(Math.max(180, layout.width), 360),
-    height: Math.min(Math.max(90, layout.height), 280),
+    y: Math.min(Math.max(56, layout.y), maxY),
+    width,
+    height,
+    collapsed: layout.collapsed,
   };
 }
 
@@ -60,13 +75,13 @@ function saveLayout(layout: LogLayout): void {
   }
 }
 
-const LogPanel = styled.div<{ $width: number; $height: number; $collapsed: boolean }>`
+const LogPanel = styled.div<{ $width: number; $height: number; $collapsed: boolean; $editMode?: boolean }>`
   width: ${(p) => p.$width}px;
   height: ${(p) => (p.$collapsed ? 'auto' : `${p.$height}px`)};
   min-width: 180px;
   max-width: 360px;
   min-height: ${(p) => (p.$collapsed ? 'auto' : '90px')};
-  max-height: 280px;
+  max-height: min(280px, calc(100dvh - 120px));
   display: flex;
   flex-direction: column;
   background: rgba(0, 0, 0, 0.88);
@@ -77,7 +92,14 @@ const LogPanel = styled.div<{ $width: number; $height: number; $collapsed: boole
   color: #eee;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   overflow: hidden;
-  resize: ${(p) => (p.$collapsed ? 'none' : 'both')};
+  resize: ${(p) => (p.$collapsed || !p.$editMode ? 'none' : 'both')};
+  ${(p) =>
+    p.$editMode
+      ? `
+    outline: 1px dashed rgba(120, 200, 255, 0.55);
+    outline-offset: 2px;
+  `
+      : ''}
 `;
 
 const LogHeader = styled.div`
@@ -93,6 +115,7 @@ const LogHeader = styled.div`
   font-size: 0.8rem;
   cursor: grab;
   user-select: none;
+  touch-action: none;
 
   &:active {
     cursor: grabbing;
@@ -106,11 +129,17 @@ const CollapseBtn = styled.button`
   cursor: pointer;
   padding: 2px 6px;
   font-size: 0.85rem;
+  min-height: 32px;
+  min-width: 32px;
 `;
 
 const LogBody = styled.div`
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   padding: 6px 10px 10px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 215, 0, 0.35) transparent;
@@ -135,6 +164,7 @@ const Entry = styled.div<{ $type: string }>`
 
 const GameLog: React.FC = () => {
   const { state } = useGame();
+  const { layoutEditMode } = useHudLayout();
   const nodeRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<LogLayout>(loadLayout());
   const saveTimerRef = useRef<number | null>(null);
@@ -162,6 +192,16 @@ const GameLog: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const onResize = () => persistLayout(layoutRef.current);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
+  }, [persistLayout]);
+
   const onDrag = useCallback(
     (_: unknown, data: DraggableData) => {
       persistLayout({ ...layoutRef.current, x: data.x, y: data.y });
@@ -171,7 +211,7 @@ const GameLog: React.FC = () => {
 
   const onResize = useCallback(() => {
     const el = nodeRef.current;
-    if (!el || layoutRef.current.collapsed) return;
+    if (!el || layoutRef.current.collapsed || !layoutEditMode) return;
     const width = el.offsetWidth;
     const height = el.offsetHeight;
     if (
@@ -181,7 +221,7 @@ const GameLog: React.FC = () => {
       return;
     }
     persistLayout({ ...layoutRef.current, width, height });
-  }, [persistLayout]);
+  }, [persistLayout, layoutEditMode]);
 
   useEffect(() => {
     const el = nodeRef.current;
@@ -197,6 +237,7 @@ const GameLog: React.FC = () => {
     <Draggable
       nodeRef={nodeRef}
       handle=".log-drag-handle"
+      disabled={!layoutEditMode}
       position={{ x: layout.x, y: layout.y }}
       onDrag={onDrag}
       onStop={onDrag}
@@ -206,10 +247,11 @@ const GameLog: React.FC = () => {
         $width={layout.width}
         $height={layout.height}
         $collapsed={layout.collapsed}
-        style={{ position: 'fixed', left: 0, top: 0 }}
+        $editMode={layoutEditMode}
+        style={{ position: 'fixed', left: 0, top: 0, zIndex: layoutEditMode ? 128 : 85 }}
       >
         <LogHeader className="log-drag-handle">
-          <span>Game Log</span>
+          <span>{layoutEditMode ? '⠿ Game Log' : 'Game Log'}</span>
           <CollapseBtn
             type="button"
             onClick={() =>

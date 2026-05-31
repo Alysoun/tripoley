@@ -117,7 +117,7 @@ const DragBounds = styled.div`
 const EditHint = styled.div`
   position: fixed;
   left: 50%;
-  top: 72px;
+  top: 190px;
   transform: translateX(-50%);
   z-index: 54;
   background: rgba(0, 0, 0, 0.82);

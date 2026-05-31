@@ -91,6 +91,53 @@ export function viewportWidth(): number {
   return typeof window !== 'undefined' ? window.innerWidth : 1280;
 }
 
+export function viewportHeight(): number {
+  return typeof window !== 'undefined' ? window.innerHeight : 800;
+}
+
+/** Keep bottom HUD panels above the hand area and device safe area. */
+export function hudSafeAreaBottom(): number {
+  const w = viewportWidth();
+  const h = viewportHeight();
+  if (w <= 480) return 92;
+  if (w <= 768 || h <= 620) return 76;
+  return 56;
+}
+
+const PANEL_HEIGHT_ESTIMATE: Record<HudPanelId, number> = {
+  info: 132,
+  hand: 168,
+  actions: 240,
+};
+
+const PANEL_WIDTH_ESTIMATE: Record<HudPanelId, number> = {
+  info: 320,
+  hand: 360,
+  actions: 560,
+};
+
+export function clampPanelPosition(id: HudPanelId, position: PanelPosition): PanelPosition {
+  const w = viewportWidth();
+  const h = viewportHeight();
+  const top = 52;
+  const bottom = hudSafeAreaBottom();
+  const height = PANEL_HEIGHT_ESTIMATE[id];
+  const width = PANEL_WIDTH_ESTIMATE[id];
+
+  return {
+    x: Math.min(Math.max(8, position.x), Math.max(8, w - width - 8)),
+    y: Math.min(Math.max(top, position.y), Math.max(top, h - bottom - height)),
+  };
+}
+
+export function clampHudLayout(layout: HudLayout): HudLayout {
+  return {
+    info: clampPanelPosition('info', layout.info),
+    hand: clampPanelPosition('hand', layout.hand),
+    actions: clampPanelPosition('actions', layout.actions),
+  };
+}
+
 export function defaultSeatLabelScaleForViewport(width = viewportWidth()): number {
   if (width <= 480) return DEFAULT_SEAT_LABEL_SCALE_PHONE;
   if (width <= 768) return DEFAULT_SEAT_LABEL_SCALE_TABLET;
@@ -99,31 +146,42 @@ export function defaultSeatLabelScaleForViewport(width = viewportWidth()): numbe
 
 export function defaultHudLayout(): HudLayout {
   const w = viewportWidth();
-  const h = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const h = viewportHeight();
   const narrow = w <= 480;
   const tablet = w <= 768;
+  const landscape = w > h;
+  const shortViewport = h <= 520 || (landscape && h <= 680);
 
-  const bottomHandY = narrow
-    ? Math.max(96, h - 132)
-    : tablet
-      ? Math.max(108, h - 148)
-      : Math.max(120, h - 156);
-  const bottomInfoY = narrow
-    ? Math.max(88, h - 124)
-    : tablet
-      ? Math.max(96, h - 136)
-      : Math.max(96, h - 148);
-  const bottomActionsY = narrow
-    ? Math.max(88, h - 300)
-    : tablet
-      ? Math.max(96, h - 320)
-      : Math.max(96, h - 340);
+  const bottomHandY = shortViewport
+    ? Math.max(88, h - (narrow ? 128 : 142))
+    : narrow
+      ? Math.max(96, h - 132)
+      : tablet
+        ? Math.max(108, h - 148)
+        : Math.max(120, h - 156);
+  const bottomInfoY = shortViewport
+    ? 56
+    : narrow
+      ? Math.max(88, h - 124)
+      : tablet
+        ? Math.max(96, h - 136)
+        : Math.max(96, h - 148);
+  const bottomActionsY = shortViewport
+    ? Math.max(72, h - (narrow ? 292 : 312))
+    : narrow
+      ? Math.max(88, h - 300)
+      : tablet
+        ? Math.max(96, h - 320)
+        : Math.max(96, h - 340);
 
-  return {
+  return clampHudLayout({
     info: { x: narrow ? 8 : 16, y: bottomInfoY },
     hand: { x: Math.round(w / 2 - (narrow ? 120 : 160)), y: bottomHandY },
-    actions: { x: Math.round(w / 2 - (narrow ? 150 : 280)), y: bottomActionsY },
-  };
+    actions: {
+      x: Math.round(w / 2 - (narrow ? 150 : shortViewport ? 200 : 280)),
+      y: bottomActionsY,
+    },
+  });
 }
 
 export function defaultStoredHudLayout(): StoredHudLayout {
@@ -158,7 +216,7 @@ export function loadStoredHudLayout(): StoredHudLayout {
 
     if (parsed.panels && isPanelPosition(parsed.panels.hand)) {
       return {
-        panels: { ...defaultHudLayout(), ...parsed.panels },
+        panels: clampHudLayout({ ...defaultHudLayout(), ...parsed.panels }),
         handScale: clampHandScale(
           typeof parsed.handScale === 'number' ? parsed.handScale : DEFAULT_HAND_SCALE
         ),
@@ -180,7 +238,7 @@ export function loadStoredHudLayout(): StoredHudLayout {
 
     if (isLegacyHudLayout(parsed)) {
       return {
-        panels: { ...defaultHudLayout(), ...parsed },
+        panels: clampHudLayout({ ...defaultHudLayout(), ...parsed }),
         handScale: DEFAULT_HAND_SCALE,
         potLabelOffsets: defaultPotLabelOffsets(),
         seatLabelScale: DEFAULT_SEAT_LABEL_SCALE,

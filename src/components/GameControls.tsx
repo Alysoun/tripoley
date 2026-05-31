@@ -183,8 +183,20 @@ const GameControls: React.FC = () => {
             type="button"
             $active={layoutEditMode}
             onClick={toggleLayoutEditMode}
-            aria-label={layoutEditMode ? 'Done moving UI' : 'Move UI panels, pot labels, and opponent labels'}
-            title={layoutEditMode ? 'Done moving UI' : 'Move UI panels, pot labels, and opponent labels'}
+            aria-label={
+              layoutEditMode
+                ? 'Done moving UI — resume game'
+                : state.isSoloSession
+                  ? 'Pause and move UI panels, pot labels, and opponent labels'
+                  : 'Move UI panels, pot labels, and opponent labels'
+            }
+            title={
+              layoutEditMode
+                ? 'Done moving UI'
+                : state.isSoloSession
+                  ? 'Pause game and move UI panels, pot labels, and opponent labels'
+                  : 'Move UI panels, pot labels, and opponent labels'
+            }
             aria-pressed={layoutEditMode}
           >
             ⠿

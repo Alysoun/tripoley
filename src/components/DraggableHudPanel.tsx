@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import styled from 'styled-components';
 import Draggable from 'react-draggable';
-import { HudPanelId } from './hudPanelLayout';
+import { HudPanelId, clampPanelPosition } from './hudPanelLayout';
 import { useHudLayout } from '../context/HudLayoutContext';
 
 type DraggableHudPanelProps = {
@@ -65,11 +65,21 @@ const DragHandle = styled.div<{ $variant: 'glass' | 'minimal' }>`
   }
 `;
 
-const PanelBody = styled.div<{ $variant: 'glass' | 'minimal'; $editMode: boolean }>`
+const PanelBody = styled.div<{ $variant: 'glass' | 'minimal'; $editMode: boolean; $scrollable?: boolean }>`
   padding: ${(p) => {
     if (p.$variant === 'minimal') return p.$editMode ? '4px 0 0' : '0';
     return p.$editMode ? '8px 12px 10px' : '10px 12px';
   }};
+  ${(p) =>
+    p.$scrollable
+      ? `
+    max-height: min(260px, calc(100dvh - 140px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  `
+      : ''}
   ${(p) =>
     p.$variant === 'minimal'
       ? `
@@ -97,7 +107,7 @@ const DraggableHudPanel: React.FC<DraggableHudPanelProps> = ({
       position={position}
       onStart={() => focusPanel(id)}
       onStop={(_, data) => {
-        setPanelPosition(id, { x: data.x, y: data.y });
+        setPanelPosition(id, clampPanelPosition(id, { x: data.x, y: data.y }));
         focusPanel(null);
       }}
     >
@@ -114,7 +124,11 @@ const DraggableHudPanel: React.FC<DraggableHudPanelProps> = ({
             <span>{title}</span>
           </DragHandle>
         )}
-        <PanelBody $variant={variant} $editMode={layoutEditMode}>
+        <PanelBody
+          $variant={variant}
+          $editMode={layoutEditMode}
+          $scrollable={id === 'actions' && !layoutEditMode}
+        >
           {children}
         </PanelBody>
       </PanelShell>

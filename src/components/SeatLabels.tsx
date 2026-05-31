@@ -186,7 +186,7 @@ const DragBounds = styled.div`
 const EditToolbar = styled.div`
   position: fixed;
   left: 50%;
-  top: 108px;
+  top: 190px;
   transform: translateX(-50%);
   z-index: 122;
   display: flex;

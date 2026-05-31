@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useGame } from '../context/GameContext';
+import { useHudLayout } from '../context/HudLayoutContext';
 import { debugAiTurnDelayMs } from '../debugConfig';
 import { getLegalMichiganPlays, canPassLead } from '../game/engine/michigan';
 import { GameState } from '../types/GameTypes';
@@ -52,10 +53,13 @@ function runAITurnSync(
 /** Automatically executes AI player turns with a short delay. */
 export function useAITurn() {
   const { state, dispatch, dispatchAI } = useGame();
+  const { layoutEditMode } = useHudLayout();
   const stateRef = useRef(state);
   stateRef.current = state;
+  const pausedForLayout = layoutEditMode && !!state.isSoloSession;
 
   useEffect(() => {
+    if (pausedForLayout) return;
     const current = state.players[state.currentPlayer];
     if (!current) return;
     if (state.phase === 'setup' || state.phase === 'gameOver' || state.phase === 'announcement') {
@@ -101,9 +105,12 @@ export function useAITurn() {
     state.players,
     dispatch,
     dispatchAI,
+    pausedForLayout,
   ]);
 
   useEffect(() => {
+    if (pausedForLayout) return;
+
     let wasHidden = false;
 
     const resume = () => {
@@ -121,5 +128,5 @@ export function useAITurn() {
 
     document.addEventListener('visibilitychange', resume);
     return () => document.removeEventListener('visibilitychange', resume);
-  }, [dispatch, dispatchAI]);
+  }, [dispatch, dispatchAI, pausedForLayout]);
 }
