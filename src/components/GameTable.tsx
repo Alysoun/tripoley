@@ -29,7 +29,12 @@ import { rulesFromPreset, defaultHouseRules } from '../game/engine/houseRules';
 
 import type { FeltColor } from '../game/achievements/types';
 
-const TABLE_TILT = '56deg';
+/** 3D tilt — tuned so circular felt matches top-down Pot3.png after rotateX. */
+const TABLE_TILT = '64deg';
+const TABLE_PERSPECTIVE = '1400px';
+const TABLE_PERSPECTIVE_ORIGIN = '50% 40%';
+/** Square table diameter — circle on the felt before perspective. */
+const TABLE_SIZE = 'min(96vmin, calc(100dvh - 140px), 960px)';
 const MICHIGAN_PLAY_DRAG = 'application/x-tripoley-michigan-play';
 
 const FELT_BACKGROUNDS: Record<FeltColor, string> = {
@@ -81,8 +86,8 @@ const TableScene = styled.div`
   align-items: center;
   justify-content: center;
   transform-style: preserve-3d;
-  perspective: 1200px;
-  perspective-origin: 50% 38%;
+  perspective: ${TABLE_PERSPECTIVE};
+  perspective-origin: ${TABLE_PERSPECTIVE_ORIGIN};
   pointer-events: none;
 
   & > * {
@@ -92,9 +97,9 @@ const TableScene = styled.div`
 
 const TableShadow = styled.div`
   position: absolute;
-  width: min(72vw, 920px);
-  height: 140px;
-  bottom: 14%;
+  width: ${TABLE_SIZE};
+  height: 72px;
+  bottom: 12%;
   left: 50%;
   transform: translateX(-50%) translateZ(-120px) rotateX(90deg);
   background: radial-gradient(
@@ -109,36 +114,31 @@ const TableShadow = styled.div`
 
 const TableStack = styled.div`
   position: relative;
-  width: min(88vw, 980px);
-  height: min(100%, 680px);
-  max-height: min(72vh, 680px);
-  transform: translateY(-2vh);
+  width: ${TABLE_SIZE};
+  aspect-ratio: 1;
+  transform: translateY(-1vh);
   transform-style: preserve-3d;
 
   @media (max-width: 768px) {
-    width: min(88vw, 980px);
-    max-height: min(48vh, 480px);
-    transform: translateY(-4vh);
+    transform: translateY(-2vh);
   }
 
   @media (max-width: 480px) {
-    width: min(92vw, 980px);
-    max-height: min(42vh, 400px);
-    transform: translateY(-2vh);
+    transform: translateY(0);
   }
 `;
 
 const TableSurface = styled.div`
   position: relative;
   width: 100%;
-  height: 100%;
+  aspect-ratio: 1;
   transform: rotateX(var(--table-tilt));
   transform-style: preserve-3d;
 `;
 
 const TableRail = styled.div`
   position: absolute;
-  inset: -18px;
+  inset: -3.6%;
   border-radius: 50%;
   background: linear-gradient(165deg, #5c3d1e 0%, #3d2812 35%, #2a1a0c 70%, #1a1008 100%);
   box-shadow:
@@ -165,6 +165,7 @@ const TableFelt = styled.div<{ $felt: FeltColor; $playDropActive?: boolean }>`
   align-items: center;
   justify-content: center;
   transform: translateZ(0);
+  transform-style: preserve-3d;
   backface-visibility: visible;
   overflow: visible;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;

@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { PotSection, SectionLabel } from '../types/GameTypes';
 import { LABEL_TO_POT_SECTION } from '../game/engine/animations';
-import { POT_BOARD_SIZE, potSectionAnchorPercent } from './potLabelLayout';
+import { POT_DISPLAY_SIZE, potSectionAnchorPercent } from './potLabelLayout';
 import { publicAsset } from '../utils/publicAsset';
 
 interface TripoleyPotProps {
@@ -13,11 +13,11 @@ interface TripoleyPotProps {
 
 const PotContainer = styled.div`
   position: relative;
-  width: min(48vmin, ${POT_BOARD_SIZE}px);
-  height: min(48vmin, ${POT_BOARD_SIZE}px);
+  width: ${POT_DISPLAY_SIZE};
+  height: ${POT_DISPLAY_SIZE};
+  flex-shrink: 0;
   margin: 0 auto;
-  margin-top: calc(-0.2 * min(48vmin, ${POT_BOARD_SIZE}px));
-  transform: translateZ(8px);
+  transform: translateZ(1px);
   transform-style: preserve-3d;
 `;
 

@@ -17,6 +17,9 @@ export const POT_SECTION_POSITIONS: Record<SectionLabel, PotSectionPoint> = {
 
 export const POT_BOARD_SIZE = 500;
 
+/** Fixed on-screen size — decoupled from table felt so the board can grow around the pot. */
+export const POT_DISPLAY_SIZE = `min(48vmin, ${POT_BOARD_SIZE}px)`;
+
 export function potSectionAnchorPercent(label: SectionLabel): { left: number; top: number } {
   const { x, y } = POT_SECTION_POSITIONS[label];
   return {
