@@ -16,6 +16,7 @@ import AnimationLayer from './AnimationLayer';
 import { PlayerActionTimerProvider } from '../hooks/usePlayerActionTimer';
 import { useGameSounds } from '../hooks/useGameSounds';
 import { useAITurn } from '../hooks/useAITurn';
+import { useSpectatorAutoPlay } from '../hooks/useSpectatorAutoPlay';
 import { useAchievementTracking } from '../hooks/useAchievementTracking';
 import { potBoardToDisplaySections } from '../game/engine/reducer';
 import SeatAnchors from './SeatAnchors';
@@ -198,6 +199,7 @@ const GameTableContent: React.FC = () => {
   const { isEditingLayoutGroup } = useHudLayout();
   useGameSounds();
   useAITurn();
+  useSpectatorAutoPlay();
   useAchievementTracking();
   const [playDropActive, setPlayDropActive] = useState(false);
   const debugAutoStarted = useRef(false);

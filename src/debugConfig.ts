@@ -1,4 +1,6 @@
 import type { DebugConfig } from './debug.types';
+import type { GameState } from './types/GameTypes';
+import { spectatorAiDelayMs, shouldSpectatorSkipAnimations } from './game/spectatorMode';
 
 const DEFAULT_DEBUG: DebugConfig = {
   enabled: false,
@@ -43,12 +45,17 @@ export function debugPlayerActionTurnMs(fallback: number): number {
   return DEBUG.playerActionTurnMs;
 }
 
-export function debugAiTurnDelayMs(fallback: number): number {
+export function debugAiTurnDelayMs(fallback: number, state?: GameState): number {
+  if (state) {
+    const spec = spectatorAiDelayMs(state);
+    if (spec != null) return spec;
+  }
   if (!isDebugActive() || DEBUG.aiTurnDelayMs == null) return fallback;
   return DEBUG.aiTurnDelayMs;
 }
 
-export function debugSkipAnimations(): boolean {
+export function debugSkipAnimations(state?: GameState): boolean {
+  if (state && shouldSpectatorSkipAnimations(state)) return true;
   return isDebugActive() && DEBUG.skipAnimations;
 }
 

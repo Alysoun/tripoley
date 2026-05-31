@@ -98,7 +98,7 @@ export function useAITurn() {
 
     const timer = window.setTimeout(() => {
       dispatchAI();
-    }, debugAiTurnDelayMs(700));
+    }, debugAiTurnDelayMs(700, state));
 
     return () => window.clearTimeout(timer);
   }, [

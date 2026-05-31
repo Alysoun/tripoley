@@ -250,7 +250,7 @@ const AnimItem: React.FC<AnimItemProps> = ({
 const AnimationLayer: React.FC = () => {
   const { state, dispatch } = useGame();
   const { activeEffects } = useAchievements();
-  const skipAnimations = debugSkipAnimations();
+  const skipAnimations = debugSkipAnimations(state);
 
   useEffect(() => {
     if (!skipAnimations) return;

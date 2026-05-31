@@ -35,6 +35,8 @@ import { useAchievements } from '../context/AchievementContext';
 import { ACHIEVEMENT_DEFINITIONS } from '../game/achievements/definitions';
 import AchievementsPanel from './AchievementsPanel';
 import RulesModal from './RulesModal';
+import { useKonamiUnlock } from '../hooks/useKonamiUnlock';
+import { isSpectatorUnlocked } from '../game/spectatorMode';
 
 const SelectContainer = styled.div`
   background: rgba(0, 0, 0, 0.92);
@@ -246,6 +248,13 @@ const SecondaryBtn = styled.button`
   }
 `;
 
+const SpectatorHint = styled.p<{ $flash?: boolean }>`
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+  color: ${(p) => (p.$flash ? '#9cf59c' : '#7a9e7a')};
+  transition: color 0.3s ease;
+`;
+
 interface PlayerSelectProps {
   onStart: (seats: SeatConfig[], houseRules: HouseRules) => void;
 }
@@ -253,6 +262,8 @@ interface PlayerSelectProps {
 const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
   const [showAchievements, setShowAchievements] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const { unlocked, flash: spectatorFlash } = useKonamiUnlock(true);
+  const spectatorMode = unlocked || isSpectatorUnlocked();
   const { unlockedCount } = useAchievements();
   const [playerCount, setPlayerCount] = useState(4);
   const [humanName, setHumanName] = useState(() => loadStoredPlayerName());
@@ -285,7 +296,7 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
         isHuman: prev[i]?.isHuman ?? i === 0,
         name: (prev[i]?.isHuman ?? i === 0) ? sanitizePlayerName(humanName) : prev[i]?.name,
       }));
-      if (!next.some((s) => s.isHuman)) next[0].isHuman = true;
+      if (!spectatorMode && !next.some((s) => s.isHuman)) next[0].isHuman = true;
       if (next[0].isHuman) next[0].name = sanitizePlayerName(humanName);
       return next;
     });
@@ -302,7 +313,7 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
           name: isHuman ? sanitizePlayerName(humanName) : undefined,
         };
       });
-      if (!next.some((s) => s.isHuman)) next[index].isHuman = true;
+      if (!spectatorMode && !next.some((s) => s.isHuman)) next[index].isHuman = true;
       if (!next[index].isHuman) {
         setAiSettings((prev) => ({
           ...prev,
@@ -338,6 +349,18 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
 
   const humanCount = seats.filter((s) => s.isHuman).length;
   const aiCount = playerCount - humanCount;
+  const canStart =
+    playerCount >= MIN_PLAYERS && (humanCount >= 1 || (spectatorMode && humanCount === 0));
+
+  const setAllAi = () => {
+    setSeats((prev) =>
+      prev.map((s) => ({
+        ...s,
+        isHuman: false,
+        name: undefined,
+      }))
+    );
+  };
   const presetValue =
     houseRules.preset === 'custom' ? 'custom' : houseRules.preset;
 
@@ -507,7 +530,23 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
         {humanCount === 1 && aiCount > 0
           ? ' · solo mode — achievements unlock timers, visuals & QoL'
           : ''}
+        {spectatorMode && humanCount === 0 ? ' · AI-only table runs at high speed' : ''}
       </Subtitle>
+
+      {spectatorMode && (
+        <>
+          <SpectatorHint $flash={spectatorFlash}>
+            {spectatorFlash
+              ? 'Director mode on — set every seat to AI, then deal.'
+              : 'Director mode — all-AI tables auto-play fast this session.'}
+          </SpectatorHint>
+          {humanCount > 0 && (
+            <SecondaryBtn type="button" onClick={setAllAi}>
+              All AI seats
+            </SecondaryBtn>
+          )}
+        </>
+      )}
 
       <SecondaryBtn type="button" onClick={() => setShowRules(true)}>
         How to Play
@@ -521,9 +560,9 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
 
       <StartButton
         onClick={handleStart}
-        disabled={humanCount < 1 || playerCount < MIN_PLAYERS}
+        disabled={!canStart}
       >
-        Deal Round 1
+        {humanCount === 0 ? 'Start AI table' : 'Deal Round 1'}
       </StartButton>
 
       {showAchievements && <AchievementsPanel onClose={() => setShowAchievements(false)} />}

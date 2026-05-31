@@ -6,6 +6,10 @@
  * Reload after edits. Chip/timer values apply on the next deal or new round.
  * In the browser console you can also mutate live:
  *   __TRIPOLEY_DEBUG__.startingChips = 999
+ *
+ * Production / GitHub Pages — AI-only fast table (no debug.ts needed):
+ *   On the setup screen, enter the Konami code (↑↑↓↓←→←→ B A)
+ *   or type uuddlrlrba. Toggle every seat to AI, then Start AI table.
  */
 import type { DebugConfig } from './debug.types';
 
