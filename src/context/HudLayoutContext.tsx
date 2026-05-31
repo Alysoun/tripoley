@@ -10,8 +10,12 @@ import {
   clearStoredHudLayout,
   clampHandScale,
   clampPotLabelOffset,
+  clampSeatLabelOffset,
+  clampSeatLabelScale,
   defaultPotLabelOffsets,
+  defaultSeatLabelOffsets,
   defaultStoredHudLayout,
+  DEFAULT_SEAT_LABEL_SCALE,
   HUD_PANEL_Z_BASE,
   HudLayout,
   HudPanelId,
@@ -20,6 +24,8 @@ import {
   PotLabelOffset,
   PotLabelOffsets,
   saveStoredHudLayout,
+  SeatLabelOffset,
+  SeatLabelOffsets,
 } from '../components/hudPanelLayout';
 import { SectionLabel } from '../types/GameTypes';
 
@@ -27,11 +33,15 @@ type HudLayoutContextValue = {
   layout: HudLayout;
   handScale: number;
   potLabelOffsets: PotLabelOffsets;
+  seatLabelScale: number;
+  seatLabelOffsets: SeatLabelOffsets;
   layoutEditMode: boolean;
   setLayoutEditMode: (enabled: boolean) => void;
   toggleLayoutEditMode: () => void;
   setPanelPosition: (id: HudPanelId, position: PanelPosition) => void;
   setPotLabelOffset: (label: SectionLabel, offset: PotLabelOffset) => void;
+  setSeatLabelScale: (scale: number) => void;
+  setSeatLabelOffset: (seatIndex: number, offset: SeatLabelOffset) => void;
   setHandScale: (scale: number) => void;
   resetLayout: () => void;
   focusPanel: (id: HudPanelId | null) => void;
@@ -52,6 +62,8 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const layout = stored.panels;
   const handScale = stored.handScale;
   const potLabelOffsets = stored.potLabelOffsets ?? defaultPotLabelOffsets();
+  const seatLabelScale = stored.seatLabelScale ?? DEFAULT_SEAT_LABEL_SCALE;
+  const seatLabelOffsets = stored.seatLabelOffsets ?? defaultSeatLabelOffsets();
 
   const setPanelPosition = useCallback((id: HudPanelId, position: PanelPosition) => {
     setStored((prev) => ({
@@ -66,6 +78,20 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       potLabelOffsets: {
         ...(prev.potLabelOffsets ?? defaultPotLabelOffsets()),
         [label]: clampPotLabelOffset(offset.dx, offset.dy),
+      },
+    }));
+  }, []);
+
+  const setSeatLabelScale = useCallback((scale: number) => {
+    setStored((prev) => ({ ...prev, seatLabelScale: clampSeatLabelScale(scale) }));
+  }, []);
+
+  const setSeatLabelOffset = useCallback((seatIndex: number, offset: SeatLabelOffset) => {
+    setStored((prev) => ({
+      ...prev,
+      seatLabelOffsets: {
+        ...(prev.seatLabelOffsets ?? defaultSeatLabelOffsets()),
+        [seatIndex]: clampSeatLabelOffset(offset.dx, offset.dy),
       },
     }));
   }, []);
@@ -95,11 +121,15 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       layout,
       handScale,
       potLabelOffsets,
+      seatLabelScale,
+      seatLabelOffsets,
       layoutEditMode,
       setLayoutEditMode,
       toggleLayoutEditMode,
       setPanelPosition,
       setPotLabelOffset,
+      setSeatLabelScale,
+      setSeatLabelOffset,
       setHandScale,
       resetLayout,
       focusPanel: setFocusedPanel,
@@ -109,9 +139,13 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       layout,
       handScale,
       potLabelOffsets,
+      seatLabelScale,
+      seatLabelOffsets,
       layoutEditMode,
       setPanelPosition,
       setPotLabelOffset,
+      setSeatLabelScale,
+      setSeatLabelOffset,
       setHandScale,
       resetLayout,
       toggleLayoutEditMode,

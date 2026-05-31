@@ -18,7 +18,8 @@ import { useGameSounds } from '../hooks/useGameSounds';
 import { useAITurn } from '../hooks/useAITurn';
 import { useAchievementTracking } from '../hooks/useAchievementTracking';
 import { potBoardToDisplaySections } from '../game/engine/reducer';
-import PlayerPosition from './PlayerPosition';
+import SeatAnchors from './SeatAnchors';
+import SeatLabels from './SeatLabels';
 import { TABLE_BOTTOM_INSET } from './hudLayout';
 import { HudLayoutProvider, useHudLayout } from '../context/HudLayoutContext';
 import { DEBUG, isDebugActive } from '../debugConfig';
@@ -109,18 +110,6 @@ const TableSurface = styled.div`
   height: 100%;
   transform: rotateX(var(--table-tilt));
   transform-style: preserve-3d;
-`;
-
-/** Screen-space overlay aligned to the table stack — above the hand HUD (z-index 50). */
-const SeatLabelOverlay = styled.div`
-  position: fixed;
-  left: 50%;
-  top: calc(50% - 24px);
-  width: min(88vw, 980px);
-  height: min(calc(100vh - 96px), 680px);
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 55;
 `;
 
 const TableRail = styled.div`
@@ -283,6 +272,7 @@ const GameTableContent: React.FC = () => {
             >
               {isGameStarted && (
                 <>
+                  <SeatAnchors totalPlayers={state.players.length} showAnchorMarkers={layoutEditMode} />
                   <TripoleyPot
                     sections={potSections as Parameters<typeof TripoleyPot>[0]['sections']}
                     showAnchorMarkers={layoutEditMode}
@@ -296,25 +286,12 @@ const GameTableContent: React.FC = () => {
       </TableScene>
 
       {isGameStarted && (
-        <SeatLabelOverlay>
-          {state.players
-            .filter((p) => {
-              if (!p.isHuman) return true;
-              const humanCount = state.players.filter((h) => h.isHuman).length;
-              return humanCount > 1 && state.currentPlayer !== p.id;
-            })
-            .map((player) => (
-              <PlayerPosition
-                key={player.id}
-                player={player}
-                isDealer={player.id === state.dealerId}
-                isHuman={player.isHuman}
-                isActiveTurn={state.currentPlayer === player.id}
-                totalPlayers={state.players.length}
-                lastPlayed={state.michiganShownPlays[player.id] ?? null}
-              />
-            ))}
-        </SeatLabelOverlay>
+        <SeatLabels
+          players={state.players}
+          dealerId={state.dealerId}
+          currentPlayer={state.currentPlayer}
+          lastPlayedBySeat={state.michiganShownPlays}
+        />
       )}
 
       {!isGameStarted && (

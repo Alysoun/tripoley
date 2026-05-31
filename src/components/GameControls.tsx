@@ -169,8 +169,8 @@ const GameControls: React.FC = () => {
             type="button"
             $active={layoutEditMode}
             onClick={toggleLayoutEditMode}
-            aria-label={layoutEditMode ? 'Done moving UI' : 'Move UI panels and pot labels'}
-            title={layoutEditMode ? 'Done moving UI' : 'Move UI panels and pot labels'}
+            aria-label={layoutEditMode ? 'Done moving UI' : 'Move UI panels, pot labels, and opponent labels'}
+            title={layoutEditMode ? 'Done moving UI' : 'Move UI panels, pot labels, and opponent labels'}
             aria-pressed={layoutEditMode}
           >
             ⠿
@@ -179,8 +179,8 @@ const GameControls: React.FC = () => {
             <SoundBtn
               type="button"
               onClick={resetLayout}
-              aria-label="Reset HUD layout and pot labels"
-              title="Reset HUD panel and pot label positions"
+              aria-label="Reset HUD layout, pot labels, and opponent labels"
+              title="Reset HUD panel, pot label, and opponent label positions"
             >
               ⟲
             </SoundBtn>

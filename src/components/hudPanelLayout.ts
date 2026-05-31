@@ -10,16 +10,44 @@ export type PanelPosition = {
 
 export type HudLayout = Record<HudPanelId, PanelPosition>;
 
+export type SeatLabelOffset = { dx: number; dy: number };
+export type SeatLabelOffsets = Record<number, SeatLabelOffset>;
+
 export type StoredHudLayout = {
   panels: HudLayout;
   handScale: number;
   potLabelOffsets?: PotLabelOffsets;
+  seatLabelScale?: number;
+  seatLabelOffsets?: SeatLabelOffsets;
 };
 
 export type PotLabelOffset = { dx: number; dy: number };
 export type PotLabelOffsets = Record<SectionLabel, PotLabelOffset>;
 
 export const MAX_POT_LABEL_OFFSET_PX = 56;
+
+export const DEFAULT_SEAT_LABEL_SCALE = 1.45;
+export const MIN_SEAT_LABEL_SCALE = 1;
+export const MAX_SEAT_LABEL_SCALE = 2.5;
+export const MAX_SEAT_LABEL_OFFSET_PX = 80;
+export const MAX_SEAT_INDEX = 8;
+
+export function defaultSeatLabelOffsets(): SeatLabelOffsets {
+  return Object.fromEntries(
+    Array.from({ length: MAX_SEAT_INDEX + 1 }, (_, seatIndex) => [seatIndex, { dx: 0, dy: 0 }])
+  ) as SeatLabelOffsets;
+}
+
+export function clampSeatLabelScale(scale: number): number {
+  return Math.min(MAX_SEAT_LABEL_SCALE, Math.max(MIN_SEAT_LABEL_SCALE, scale));
+}
+
+export function clampSeatLabelOffset(dx: number, dy: number): SeatLabelOffset {
+  const dist = Math.hypot(dx, dy);
+  if (dist <= MAX_SEAT_LABEL_OFFSET_PX || dist === 0) return { dx, dy };
+  const scale = MAX_SEAT_LABEL_OFFSET_PX / dist;
+  return { dx: dx * scale, dy: dy * scale };
+}
 
 export function defaultPotLabelOffsets(): PotLabelOffsets {
   return Object.fromEntries(
@@ -73,6 +101,8 @@ export function defaultStoredHudLayout(): StoredHudLayout {
     panels: defaultHudLayout(),
     handScale: DEFAULT_HAND_SCALE,
     potLabelOffsets: defaultPotLabelOffsets(),
+    seatLabelScale: DEFAULT_SEAT_LABEL_SCALE,
+    seatLabelOffsets: defaultSeatLabelOffsets(),
   };
 }
 
@@ -106,6 +136,15 @@ export function loadStoredHudLayout(): StoredHudLayout {
           ...defaultPotLabelOffsets(),
           ...(parsed.potLabelOffsets ?? {}),
         },
+        seatLabelScale: clampSeatLabelScale(
+          typeof parsed.seatLabelScale === 'number'
+            ? parsed.seatLabelScale
+            : DEFAULT_SEAT_LABEL_SCALE
+        ),
+        seatLabelOffsets: {
+          ...defaultSeatLabelOffsets(),
+          ...(parsed.seatLabelOffsets ?? {}),
+        },
       };
     }
 
@@ -114,6 +153,8 @@ export function loadStoredHudLayout(): StoredHudLayout {
         panels: { ...defaultHudLayout(), ...parsed },
         handScale: DEFAULT_HAND_SCALE,
         potLabelOffsets: defaultPotLabelOffsets(),
+        seatLabelScale: DEFAULT_SEAT_LABEL_SCALE,
+        seatLabelOffsets: defaultSeatLabelOffsets(),
       };
     }
 

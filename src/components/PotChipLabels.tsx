@@ -225,7 +225,10 @@ const PotChipLabels: React.FC<PotChipLabelsProps> = ({ sections }) => {
   return createPortal(
     <>
       {layoutEditMode && hasPositions && (
-        <EditHint>Drag pot labels within the dashed range around each gold anchor</EditHint>
+        <EditHint>
+          Drag pot labels within the dashed range around each gold anchor · Use the toolbar above for
+          opponent label size
+        </EditHint>
       )}
       {(Object.keys(POT_SECTION_POSITIONS) as SectionLabel[]).map((label) => {
         const anchor = anchorPositions[label];

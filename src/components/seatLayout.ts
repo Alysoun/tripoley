@@ -52,5 +52,14 @@ export function getSeatCoordinates(seatIndex: number, totalPlayers: number): Sea
   return getAllSeatCoordinates(totalPlayers)[seatIndex];
 }
 
+/** Anchor point on the felt (% of table felt box) — matches seat ring geometry. */
+export function getSeatAnchorPercent(
+  seatIndex: number,
+  totalPlayers: number
+): { left: number; top: number } {
+  const { left, top } = pointOnRing(seatIndex, totalPlayers);
+  return { left, top };
+}
+
 /** Plaque sits just above the anchor point on the felt rail. */
 export const seatLabelTransform = 'translate(-50%, calc(-100% - clamp(6px, 1vh, 12px)))';
