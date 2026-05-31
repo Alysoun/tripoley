@@ -11,19 +11,28 @@ const Overlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 3200;
-  padding: 24px;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px))
+    max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 `;
 
 const Box = styled.div`
   background: #111;
   border: 2px solid rgba(255, 120, 120, 0.65);
   border-radius: 14px;
-  padding: 28px 32px;
+  padding: 20px 24px;
   color: white;
   max-width: 460px;
   width: 100%;
+  max-height: min(90dvh, calc(100dvh - 32px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   text-align: center;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.55);
+  flex-shrink: 0;
 `;
 
 const Title = styled.h2`
@@ -33,9 +42,21 @@ const Title = styled.h2`
 `;
 
 const Message = styled.p`
-  margin: 0 0 24px;
+  margin: 0;
   line-height: 1.55;
   opacity: 0.92;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+`;
+
+const Actions = styled.div`
+  flex-shrink: 0;
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 `;
 
 const Btn = styled.button`
@@ -66,17 +87,19 @@ const GameOverModal: React.FC = () => {
       <Box>
         <Title id="game-over-title">Game Over</Title>
         <Message>{message}</Message>
-        <Btn
-          type="button"
-          onClick={() => {
-            void soundManager.unlock().then(() => {
-              soundManager.play('buttonClick');
-              dispatch({ type: 'QUIT_GAME' });
-            });
-          }}
-        >
-          New Game
-        </Btn>
+        <Actions>
+          <Btn
+            type="button"
+            onClick={() => {
+              void soundManager.unlock().then(() => {
+                soundManager.play('buttonClick');
+                dispatch({ type: 'QUIT_GAME' });
+              });
+            }}
+          >
+            New Game
+          </Btn>
+        </Actions>
       </Box>
     </Overlay>
   );
