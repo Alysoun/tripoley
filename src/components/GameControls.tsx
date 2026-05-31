@@ -6,6 +6,7 @@ import { displayPlayerName } from '../utils/playerName';
 import { useGameEffects } from '../hooks/useGameEffects';
 import { useAchievements } from '../context/AchievementContext';
 import AchievementsPanel from './AchievementsPanel';
+import RulesModal from './RulesModal';
 import { useHudLayout } from '../context/HudLayoutContext';
 import LeaveTableButton from './LeaveTableButton';
 
@@ -86,6 +87,7 @@ const GameControls: React.FC = () => {
   const { toggleSound, isSoundEnabled } = useGameEffects();
   const { layoutEditMode, toggleLayoutEditMode, resetLayout } = useHudLayout();
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const current = state.players[state.currentPlayer];
   const isMyTurn = current?.isHuman;
   const isDealer = current?.id === state.dealerId;
@@ -104,6 +106,14 @@ const GameControls: React.FC = () => {
           </TurnBadge>
         )}
         <RightCluster>
+          <SoundBtn
+            type="button"
+            onClick={() => setShowRules(true)}
+            title="How to play"
+            aria-label="How to play — rules"
+          >
+            ?
+          </SoundBtn>
           {state.isSoloSession && (
             <SoundBtn
               type="button"
@@ -159,6 +169,13 @@ const GameControls: React.FC = () => {
 
       {showAchievements && (
         <AchievementsPanel onClose={() => setShowAchievements(false)} />
+      )}
+      {showRules && (
+        <RulesModal
+          onClose={() => setShowRules(false)}
+          houseRules={state.houseRules}
+          phase={state.phase}
+        />
       )}
     </>
   );

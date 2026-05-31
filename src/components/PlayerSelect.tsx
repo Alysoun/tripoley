@@ -23,6 +23,7 @@ import {
 import { useAchievements } from '../context/AchievementContext';
 import { ACHIEVEMENT_DEFINITIONS } from '../game/achievements/definitions';
 import AchievementsPanel from './AchievementsPanel';
+import RulesModal from './RulesModal';
 
 const SelectContainer = styled.div`
   background: rgba(0, 0, 0, 0.92);
@@ -203,6 +204,7 @@ interface PlayerSelectProps {
 
 const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const { unlockedCount } = useAchievements();
   const [playerCount, setPlayerCount] = useState(4);
   const [humanName, setHumanName] = useState(() => loadStoredPlayerName());
@@ -389,6 +391,10 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
           : ''}
       </Subtitle>
 
+      <SecondaryBtn type="button" onClick={() => setShowRules(true)}>
+        How to Play
+      </SecondaryBtn>
+
       {humanCount === 1 && (
         <SecondaryBtn type="button" onClick={() => setShowAchievements(true)}>
           Achievements ({unlockedCount}/{ACHIEVEMENT_DEFINITIONS.length})
@@ -403,6 +409,9 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
       </StartButton>
 
       {showAchievements && <AchievementsPanel onClose={() => setShowAchievements(false)} />}
+      {showRules && (
+        <RulesModal onClose={() => setShowRules(false)} houseRules={houseRules} phase="setup" />
+      )}
     </SelectContainer>
   );
 };
