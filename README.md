@@ -1,8 +1,8 @@
-# Tripoley
+# Pot Wheel Rummy
 
-Browser-based Tripoley (Michigan Rummy / Tripoli) with solo vs AI, achievements, and draggable HUD.
+Browser-based **Pot Wheel Rummy** — a pot-board rummy game with Pay Cards, poker, and Michigan Rummy phases. Solo vs AI, achievements, and draggable HUD.
 
-**Play online:** [https://alysoun.github.io/tripoley/](https://alysoun.github.io/tripoley/)
+**Play online:** [https://alysoun.github.io/tripoley/](https://alysoun.github.io/tripoley/) *(URL unchanged; display name is Pot Wheel Rummy)*
 
 ## Local development
 

@@ -66,7 +66,7 @@ const TripoleyPot: React.FC<TripoleyPotProps> = ({
 
   return (
     <PotContainer>
-      <PotImage src={publicAsset('assets/pot/Pot3.png')} alt="Tripoley pot" />
+      <PotImage src={publicAsset('assets/pot/Pot3.png')} alt="Pot board" />
       {sections.map(({ label }) => {
         const anchor = potSectionAnchorPercent(label as SectionLabel);
         const chips = chipByLabel.get(label) ?? 0;

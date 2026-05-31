@@ -47,7 +47,7 @@ export const HOUSE_RULE_PRESETS: Record<
   { label: string; description: string; rules: HouseRules }
 > = {
   official: {
-    label: 'Official (Cadaco-style)',
+    label: 'Standard (pay at deal)',
     description:
       'Pay cards when held after the blind deal. Michigan uses black/red lead with pass penalties.',
     rules: OFFICIAL_HOUSE_RULES,

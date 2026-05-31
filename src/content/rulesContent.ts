@@ -35,7 +35,7 @@ export const RULES_SECTIONS: RulesSection[] = [
   {
     title: 'Pay Cards (Hearts)',
     lines: [
-      'Official rules: matching sections pay out automatically if you hold the card(s) after the deal.',
+      'Standard rules: matching sections pay out automatically if you hold the card(s) after the deal.',
       'Hearts Ace–Ten pay individually; King-Queen needs both in one hand; 8-9-10 needs all three of the same suit.',
       'Unclaimed sections roll over to the next round.',
       'Home table rules: nothing pays here — pots pay when you play the matching card(s) during Michigan instead.',
@@ -77,7 +77,7 @@ const PHASE_HINTS: Partial<Record<GamePhase, string>> = {
   blindAuction:
     'Bid to swap with the blind hand and pay the dealer, or pass. Passing is permanent this round. No bidding if you hold a pay card.',
   payCards:
-    'Pay-card sections are claimed automatically (official rules) or skipped until Michigan (home table rules). Review the log, then continue.',
+    'Pay-card sections are claimed automatically (standard rules) or skipped until Michigan (home table rules). Review the log, then continue.',
   poker:
     'Use the action bar to check, bet, call, raise, or fold. All bets go to the POT; best 5-card hand wins.',
   michigan:

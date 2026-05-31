@@ -1,6 +1,6 @@
-# Tripoley Rules (This Implementation)
+# Pot Wheel Rummy — Rules (This Implementation)
 
-Based on the classic Tripoley / Michigan Rummy / Rummy Royal board game (Cadaco-style rules), with **configurable house-rule variants** at the setup screen.
+Based on the classic pot-board rummy / Michigan Rummy family. This app is **not** affiliated with any board-game manufacturer. **Configurable house-rule variants** are available at the setup screen.
 
 ## House rule presets
 
@@ -8,7 +8,7 @@ Choose a preset when starting a game, or switch to **Custom** and toggle individ
 
 | Preset | Summary |
 |--------|---------|
-| **Official (Cadaco-style)** | Pay-card pots claimed when held after the blind deal; default Michigan penalties and sequence timer |
+| **Standard (pay at deal)** | Pay-card pots claimed when held after the blind deal; default Michigan penalties and sequence timer |
 | **Home table** | Pay-card pots collected when you **play** the card in Michigan — not just for holding it after deal |
 | **Custom** | Mix and match the toggles below |
 
@@ -109,6 +109,10 @@ Under **Home table** rules (*Pay cards on Michigan play*), nothing is claimed he
 
 - Dealer rotates left
 - New antes, deal, and phases begin
+
+## AI poker skill (solo)
+
+On the setup screen, choose **Automatic mix** (random Easy through Card Shark each new game) or **Choose each AI** to set poker skill per seat. Skill affects betting and bluffing during the poker phase only.
 
 ## Chip supply
 

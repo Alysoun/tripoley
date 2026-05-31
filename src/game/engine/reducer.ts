@@ -740,7 +740,7 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
         chips: debugStartingChips(STARTING_CHIPS),
         cards: dealt[i],
         originalHand: [...dealt[i]],
-        aiDifficulty: seat.isHuman ? undefined : 'medium',
+        aiDifficulty: seat.isHuman ? undefined : seat.aiDifficulty ?? 'medium',
       }));
 
       let next: GameState = {

@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { SeatConfig, HouseRules } from '../types/GameTypes';
+import { SeatConfig, HouseRules, AIDifficulty } from '../types/GameTypes';
 import { MIN_PLAYERS, MAX_PLAYERS } from '../game/engine/constants';
+import {
+  AI_DIFFICULTY_HINTS,
+  AI_DIFFICULTY_LABELS,
+  AI_DIFFICULTY_ORDER,
+  AiPokerSkillMode,
+  applyAiDifficultiesToSeats,
+  loadStoredAiPokerSettings,
+  saveStoredAiPokerSettings,
+  StoredAiPokerSettings,
+} from '../game/engine/aiDifficulty';
+import { GAME_NAME, GAME_TAGLINE } from '../game/branding';
 import {
   HOUSE_RULE_PRESETS,
   HOUSE_RULE_TOGGLES,
@@ -98,7 +109,7 @@ const SeatGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.5rem;
-  max-height: 220px;
+  max-height: 300px;
   overflow-y: auto;
   margin: 1rem 0;
   text-align: left;
@@ -108,9 +119,46 @@ const SeatRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
   padding: 0.5rem 0.75rem;
   background: rgba(255, 255, 255, 0.06);
   border-radius: 8px;
+  flex-wrap: wrap;
+`;
+
+const SeatControls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+`;
+
+const DifficultySelect = styled(Select)`
+  font-size: 0.82rem;
+  padding: 0.35rem 0.55rem;
+  max-width: 132px;
+`;
+
+const ModeRow = styled.label`
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 0.65rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  line-height: 1.35;
+
+  input {
+    margin-top: 3px;
+  }
+
+  span small {
+    display: block;
+    color: #aaa;
+    font-size: 0.78rem;
+    margin-top: 2px;
+  }
 `;
 
 const Toggle = styled.button<{ $active: boolean }>`
@@ -215,6 +263,20 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
     }))
   );
   const [houseRules, setHouseRules] = useState<HouseRules>(() => loadStoredHouseRules());
+  const [aiSettings, setAiSettings] = useState<StoredAiPokerSettings>(() =>
+    loadStoredAiPokerSettings()
+  );
+
+  const setAiMode = (mode: AiPokerSkillMode) => {
+    setAiSettings((prev) => ({ ...prev, mode }));
+  };
+
+  const setSeatDifficulty = (seatIndex: number, difficulty: AIDifficulty) => {
+    setAiSettings((prev) => ({
+      ...prev,
+      bySeat: { ...prev.bySeat, [seatIndex]: difficulty },
+    }));
+  };
 
   const updateCount = (count: number) => {
     setPlayerCount(count);
@@ -241,6 +303,12 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
         };
       });
       if (!next.some((s) => s.isHuman)) next[index].isHuman = true;
+      if (!next[index].isHuman) {
+        setAiSettings((prev) => ({
+          ...prev,
+          bySeat: { ...prev.bySeat, [index]: prev.bySeat[index] ?? 'medium' },
+        }));
+      }
       return next;
     });
   };
@@ -261,12 +329,11 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
 
   const handleStart = () => {
     saveHouseRules(houseRules);
+    saveStoredAiPokerSettings(aiSettings);
     const name = sanitizePlayerName(humanName);
     saveStoredPlayerName(name);
-    const seatsForStart = seats.map((s) =>
-      s.isHuman ? { ...s, name } : s
-    );
-    onStart(seatsForStart, houseRules);
+    const namedSeats = seats.map((s) => (s.isHuman ? { ...s, name } : s));
+    onStart(applyAiDifficultiesToSeats(namedSeats, aiSettings), houseRules);
   };
 
   const humanCount = seats.filter((s) => s.isHuman).length;
@@ -276,9 +343,9 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
 
   return (
     <SelectContainer>
-      <Title>Tripoley</Title>
+      <Title>{GAME_NAME}</Title>
       <Subtitle>
-        Pay Cards → Poker → Michigan Rummy. Pick a rules preset or customize house rules below.
+        {GAME_TAGLINE}. Pick a rules preset or customize house rules below.
       </Subtitle>
 
       <Row>
@@ -341,12 +408,63 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
               Seat {i + 1}
               {i === 0 ? ' (starts as dealer)' : ''}
             </span>
-            <Toggle $active={seat.isHuman} onClick={() => toggleSeat(i)} type="button">
-              {seat.isHuman ? 'Human' : 'AI'}
-            </Toggle>
+            <SeatControls>
+              {!seat.isHuman && aiSettings.mode === 'manual' && (
+                <DifficultySelect
+                  aria-label={`Seat ${i + 1} poker skill`}
+                  value={aiSettings.bySeat[i] ?? 'medium'}
+                  onChange={(e) => setSeatDifficulty(i, e.target.value as AIDifficulty)}
+                >
+                  {AI_DIFFICULTY_ORDER.map((tier) => (
+                    <option key={tier} value={tier}>
+                      {AI_DIFFICULTY_LABELS[tier]}
+                    </option>
+                  ))}
+                </DifficultySelect>
+              )}
+              <Toggle $active={seat.isHuman} onClick={() => toggleSeat(i)} type="button">
+                {seat.isHuman ? 'Human' : 'AI'}
+              </Toggle>
+            </SeatControls>
           </SeatRow>
         ))}
       </SeatGrid>
+
+      <RulesSection>
+        <RulesHeading>AI poker skill</RulesHeading>
+        <Subtitle style={{ margin: '0 0 0.75rem', fontSize: '0.85rem' }}>
+          Affects betting and bluffing during the poker phase only.
+        </Subtitle>
+        <ModeRow>
+          <input
+            type="radio"
+            name="ai-poker-skill"
+            checked={aiSettings.mode === 'automatic'}
+            onChange={() => setAiMode('automatic')}
+          />
+          <span>
+            Automatic mix
+            <small>Each new game assigns Easy through Card Shark across AI seats.</small>
+          </span>
+        </ModeRow>
+        <ModeRow>
+          <input
+            type="radio"
+            name="ai-poker-skill"
+            checked={aiSettings.mode === 'manual'}
+            onChange={() => setAiMode('manual')}
+          />
+          <span>
+            Choose each AI
+            <small>Pick a skill level per AI seat in the list above.</small>
+          </span>
+        </ModeRow>
+        {aiSettings.mode === 'manual' && (
+          <Subtitle style={{ margin: '0.5rem 0 0', fontSize: '0.78rem', color: '#aaa' }}>
+            {AI_DIFFICULTY_ORDER.map((tier) => AI_DIFFICULTY_HINTS[tier]).join(' · ')}
+          </Subtitle>
+        )}
+      </RulesSection>
 
       <RulesSection>
         <RulesHeading>House rules</RulesHeading>

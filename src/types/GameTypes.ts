@@ -153,6 +153,8 @@ export interface AnimationType {
 export interface SeatConfig {
   isHuman: boolean;
   name?: string;
+  /** Poker-phase AI skill; ignored for human seats. */
+  aiDifficulty?: AIDifficulty;
 }
 
 export type PokerAction = 'check' | 'bet' | 'call' | 'raise' | 'fold';
