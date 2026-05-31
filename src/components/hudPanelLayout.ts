@@ -3,6 +3,26 @@ import { POT_SECTION_POSITIONS } from './potLabelLayout';
 
 export type HudPanelId = 'hand' | 'info' | 'actions';
 
+export type LayoutEditGroup = 'hud' | 'log' | 'opponents' | 'pot';
+
+export const LAYOUT_EDIT_GROUP_ORDER: LayoutEditGroup[] = ['hud', 'log', 'opponents', 'pot'];
+
+export const LAYOUT_EDIT_GROUP_LABELS: Record<LayoutEditGroup, string> = {
+  hud: 'Your panels',
+  log: 'Game log',
+  opponents: 'Opponent labels',
+  pot: 'Pot labels',
+};
+
+export const LAYOUT_EDIT_GROUP_HINTS: Record<LayoutEditGroup, string> = {
+  hud: 'Drag your seat info, hand, and action buttons. Resize the hand with the corner grip.',
+  log: 'Drag the game log panel. Use ▾ to collapse it if it blocks the table.',
+  opponents: 'Drag opponent name labels within the blue box around each seat.',
+  pot: 'Drag pot chip labels within the dashed range around each gold anchor.',
+};
+
+export const DEFAULT_LAYOUT_EDIT_GROUP: LayoutEditGroup = 'hud';
+
 export type PanelPosition = {
   x: number;
   y: number;

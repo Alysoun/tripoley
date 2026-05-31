@@ -193,7 +193,7 @@ const SetupOverlay = styled.div`
 const GameTableContent: React.FC = () => {
   const { state, dispatch } = useGame();
   const { startGameAction, activeEffects } = useAchievements();
-  const { layoutEditMode } = useHudLayout();
+  const { isEditingLayoutGroup } = useHudLayout();
   useGameSounds();
   useAITurn();
   useAchievementTracking();
@@ -296,10 +296,13 @@ const GameTableContent: React.FC = () => {
             >
               {isGameStarted && (
                 <>
-                  <SeatAnchors totalPlayers={state.players.length} showAnchorMarkers={layoutEditMode} />
+                  <SeatAnchors
+                    totalPlayers={state.players.length}
+                    showAnchorMarkers={isEditingLayoutGroup('opponents')}
+                  />
                   <TripoleyPot
                     sections={potSections as Parameters<typeof TripoleyPot>[0]['sections']}
-                    showAnchorMarkers={layoutEditMode}
+                    showAnchorMarkers={isEditingLayoutGroup('pot')}
                   />
                   <PotChipLabels sections={potSections as Parameters<typeof PotChipLabels>[0]['sections']} />
                 </>

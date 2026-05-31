@@ -74,13 +74,14 @@ const ChipIcon = styled.span<{ $sparkle?: boolean }>`
   ${(p) => p.$sparkle && chipSparkleAnim}
 `;
 
-const AnchorRoot = styled.div<{ $x: number; $y: number; $ready: boolean; $editMode?: boolean }>`
+const AnchorRoot = styled.div<{ $x: number; $y: number; $ready: boolean; $editMode?: boolean; $dimmed?: boolean }>`
   position: fixed;
   left: ${(p) => p.$x}px;
   top: ${(p) => p.$y}px;
-  z-index: ${(p) => (p.$editMode ? 120 : 53)};
-  opacity: ${(p) => (p.$ready ? 1 : 0)};
+  z-index: ${(p) => (p.$editMode ? 140 : p.$dimmed ? 50 : 53)};
+  opacity: ${(p) => (p.$ready ? (p.$dimmed ? 0.38 : 1) : 0)};
   pointer-events: ${(p) => (p.$editMode ? 'auto' : 'none')};
+  transition: opacity 0.15s ease;
 `;
 
 const DragHandle = styled.div`
@@ -114,21 +115,6 @@ const DragBounds = styled.div`
   pointer-events: none;
 `;
 
-const EditHint = styled.div`
-  position: fixed;
-  left: 50%;
-  top: 190px;
-  transform: translateX(-50%);
-  z-index: 54;
-  background: rgba(0, 0, 0, 0.82);
-  color: #ffd700;
-  border: 1px solid rgba(255, 215, 0, 0.35);
-  border-radius: 999px;
-  padding: 8px 14px;
-  font-size: 0.82rem;
-  pointer-events: none;
-`;
-
 type PotLabelItemProps = {
   label: SectionLabel;
   chips: number;
@@ -136,6 +122,7 @@ type PotLabelItemProps = {
   anchorY: number;
   offset: PotLabelOffset;
   editMode: boolean;
+  dimmed?: boolean;
   pulse: boolean;
   sparkle: boolean;
   onOffsetChange: (label: SectionLabel, offset: PotLabelOffset) => void;
@@ -148,6 +135,7 @@ const PotLabelItem: React.FC<PotLabelItemProps> = ({
   anchorY,
   offset,
   editMode,
+  dimmed,
   pulse,
   sparkle,
   onOffsetChange,
@@ -167,7 +155,7 @@ const PotLabelItem: React.FC<PotLabelItemProps> = ({
   );
 
   return (
-    <AnchorRoot $x={anchorX} $y={anchorY} $ready $editMode={editMode}>
+    <AnchorRoot $x={anchorX} $y={anchorY} $ready $editMode={editMode} $dimmed={dimmed}>
       {editMode && (
         <>
           <AnchorMarker aria-hidden />
@@ -202,7 +190,9 @@ const PotLabelItem: React.FC<PotLabelItemProps> = ({
 
 const PotChipLabels: React.FC<PotChipLabelsProps> = ({ sections }) => {
   const { activeEffects } = useAchievements();
-  const { layoutEditMode, potLabelOffsets, setPotLabelOffset } = useHudLayout();
+  const { layoutEditMode, isEditingLayoutGroup, potLabelOffsets, setPotLabelOffset } = useHudLayout();
+  const groupActive = isEditingLayoutGroup('pot');
+  const dimmed = layoutEditMode && !groupActive;
   const [pulseSection, setPulseSection] = useState<string | null>(null);
   const anchorPositions = usePotLabelAnchorPositions(true);
   const screenPositions = usePotLabelPositions(true, potLabelOffsets);
@@ -220,16 +210,9 @@ const PotChipLabels: React.FC<PotChipLabelsProps> = ({ sections }) => {
   }, []);
 
   const chipByLabel = new Map(sections.map((s) => [s.label, s.chips]));
-  const hasPositions = Object.keys(screenPositions).length > 0;
 
   return createPortal(
     <>
-      {layoutEditMode && hasPositions && (
-        <EditHint>
-          Drag pot labels within the dashed range around each gold anchor · Use the toolbar above for
-          opponent label size
-        </EditHint>
-      )}
       {(Object.keys(POT_SECTION_POSITIONS) as SectionLabel[]).map((label) => {
         const anchor = anchorPositions[label];
         const point = screenPositions[label];
@@ -246,7 +229,8 @@ const PotChipLabels: React.FC<PotChipLabelsProps> = ({ sections }) => {
             anchorX={anchor.x}
             anchorY={anchor.y}
             offset={potLabelOffsets[label] ?? { dx: 0, dy: 0 }}
-            editMode={layoutEditMode}
+            editMode={groupActive}
+            dimmed={dimmed}
             pulse={pulseSection === potKey}
             sparkle={!!activeEffects.neonTracers}
             onOffsetChange={setPotLabelOffset}

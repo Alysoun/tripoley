@@ -14,6 +14,7 @@ import {
   clampPotLabelOffset,
   clampSeatLabelOffset,
   clampSeatLabelScale,
+  DEFAULT_LAYOUT_EDIT_GROUP,
   defaultPotLabelOffsets,
   defaultSeatLabelOffsets,
   defaultStoredHudLayout,
@@ -21,6 +22,7 @@ import {
   HUD_PANEL_Z_BASE,
   HudLayout,
   HudPanelId,
+  LayoutEditGroup,
   loadStoredHudLayout,
   PanelPosition,
   PotLabelOffset,
@@ -38,7 +40,10 @@ type HudLayoutContextValue = {
   seatLabelScale: number;
   seatLabelOffsets: SeatLabelOffsets;
   layoutEditMode: boolean;
+  layoutEditGroup: LayoutEditGroup;
   setLayoutEditMode: (enabled: boolean) => void;
+  setLayoutEditGroup: (group: LayoutEditGroup) => void;
+  isEditingLayoutGroup: (group: LayoutEditGroup) => boolean;
   toggleLayoutEditMode: () => void;
   setPanelPosition: (id: HudPanelId, position: PanelPosition) => void;
   setPotLabelOffset: (label: SectionLabel, offset: PotLabelOffset) => void;
@@ -54,7 +59,8 @@ const HudLayoutContext = createContext<HudLayoutContextValue | null>(null);
 
 export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [stored, setStored] = useState(loadStoredHudLayout);
-  const [layoutEditMode, setLayoutEditMode] = useState(false);
+  const [layoutEditMode, setLayoutEditModeState] = useState(false);
+  const [layoutEditGroup, setLayoutEditGroup] = useState<LayoutEditGroup>(DEFAULT_LAYOUT_EDIT_GROUP);
   const [focusedPanel, setFocusedPanel] = useState<HudPanelId | null>(null);
 
   useEffect(() => {
@@ -66,6 +72,19 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const potLabelOffsets = stored.potLabelOffsets ?? defaultPotLabelOffsets();
   const seatLabelScale = stored.seatLabelScale ?? DEFAULT_SEAT_LABEL_SCALE;
   const seatLabelOffsets = stored.seatLabelOffsets ?? defaultSeatLabelOffsets();
+
+  const isEditingLayoutGroup = useCallback(
+    (group: LayoutEditGroup) => layoutEditMode && layoutEditGroup === group,
+    [layoutEditMode, layoutEditGroup]
+  );
+
+  const setLayoutEditMode = useCallback((enabled: boolean) => {
+    setLayoutEditModeState(enabled);
+    if (!enabled) {
+      setLayoutEditGroup(DEFAULT_LAYOUT_EDIT_GROUP);
+      setFocusedPanel(null);
+    }
+  }, []);
 
   const setPanelPosition = useCallback((id: HudPanelId, position: PanelPosition) => {
     setStored((prev) => ({
@@ -124,13 +143,21 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, []);
 
   const toggleLayoutEditMode = useCallback(() => {
-    setLayoutEditMode((prev) => !prev);
-    setFocusedPanel(null);
+    setLayoutEditModeState((prev) => {
+      if (prev) {
+        setLayoutEditGroup(DEFAULT_LAYOUT_EDIT_GROUP);
+        setFocusedPanel(null);
+      }
+      return !prev;
+    });
   }, []);
 
   const panelZIndex = useCallback(
-    (id: HudPanelId) => HUD_PANEL_Z_BASE[id] + (focusedPanel === id ? 10 : 0),
-    [focusedPanel]
+    (id: HudPanelId) => {
+      const base = HUD_PANEL_Z_BASE[id] + (focusedPanel === id ? 10 : 0);
+      return isEditingLayoutGroup('hud') ? base + 90 : base;
+    },
+    [focusedPanel, isEditingLayoutGroup]
   );
 
   const value = useMemo(
@@ -141,7 +168,10 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       seatLabelScale,
       seatLabelOffsets,
       layoutEditMode,
+      layoutEditGroup,
       setLayoutEditMode,
+      setLayoutEditGroup,
+      isEditingLayoutGroup,
       toggleLayoutEditMode,
       setPanelPosition,
       setPotLabelOffset,
@@ -159,6 +189,8 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       seatLabelScale,
       seatLabelOffsets,
       layoutEditMode,
+      layoutEditGroup,
+      isEditingLayoutGroup,
       setPanelPosition,
       setPotLabelOffset,
       setSeatLabelScale,

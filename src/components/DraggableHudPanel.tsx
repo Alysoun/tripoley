@@ -16,6 +16,7 @@ const PanelShell = styled.div<{
   $zIndex: number;
   $variant: 'glass' | 'minimal';
   $editMode: boolean;
+  $dimmed?: boolean;
 }>`
   position: fixed;
   left: 0;
@@ -23,6 +24,9 @@ const PanelShell = styled.div<{
   z-index: ${(p) => p.$zIndex};
   max-width: calc(100vw - 16px);
   color: white;
+  opacity: ${(p) => (p.$dimmed ? 0.38 : 1)};
+  pointer-events: ${(p) => (p.$dimmed ? 'none' : 'auto')};
+  transition: opacity 0.15s ease;
   ${(p) =>
     p.$variant === 'glass'
       ? `
@@ -96,14 +100,17 @@ const DraggableHudPanel: React.FC<DraggableHudPanelProps> = ({
   className,
 }) => {
   const nodeRef = useRef<HTMLDivElement>(null);
-  const { layout, layoutEditMode, setPanelPosition, focusPanel, panelZIndex } = useHudLayout();
+  const { layout, layoutEditMode, isEditingLayoutGroup, setPanelPosition, focusPanel, panelZIndex } =
+    useHudLayout();
   const position = layout[id];
+  const groupActive = isEditingLayoutGroup('hud');
+  const dimmed = layoutEditMode && !groupActive;
 
   return (
     <Draggable
       nodeRef={nodeRef}
       handle=".hud-drag-handle"
-      disabled={!layoutEditMode}
+      disabled={!groupActive}
       position={position}
       onStart={() => focusPanel(id)}
       onStop={(_, data) => {
@@ -116,9 +123,10 @@ const DraggableHudPanel: React.FC<DraggableHudPanelProps> = ({
         className={className}
         $zIndex={panelZIndex(id)}
         $variant={variant}
-        $editMode={layoutEditMode}
+        $editMode={groupActive}
+        $dimmed={dimmed}
       >
-        {layoutEditMode && (
+        {groupActive && (
           <DragHandle className="hud-drag-handle" $variant={variant}>
             <span aria-hidden="true">⠿</span>
             <span>{title}</span>
@@ -126,7 +134,7 @@ const DraggableHudPanel: React.FC<DraggableHudPanelProps> = ({
         )}
         <PanelBody
           $variant={variant}
-          $editMode={layoutEditMode}
+          $editMode={groupActive}
           $scrollable={id === 'actions' && !layoutEditMode}
         >
           {children}

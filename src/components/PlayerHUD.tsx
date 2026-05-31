@@ -216,7 +216,8 @@ const NameBtn = styled.button`
 const PlayerHUD: React.FC = () => {
   const { state, dispatch } = useGame();
   const { activeEffects } = useAchievements();
-  const { handScale, layoutEditMode, setHandScale } = useHudLayout();
+  const { handScale, isEditingLayoutGroup, setHandScale } = useHudLayout();
+  const hudGroupActive = isEditingLayoutGroup('hud');
   const [viewSeat, setViewSeat] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropTarget, setDropTarget] = useState<number | null>(null);
@@ -463,7 +464,7 @@ const PlayerHUD: React.FC = () => {
         <DraggableHudPanel
           id="hand"
           title={
-            layoutEditMode
+            hudGroupActive
               ? `Your hand · ${Math.round(handScale * 100)}%`
               : 'Your hand'
           }
@@ -473,7 +474,7 @@ const PlayerHUD: React.FC = () => {
             scale={handScale}
             baseWidth={fanSize.width}
             baseHeight={handPanelHeight}
-            editMode={layoutEditMode}
+            editMode={hudGroupActive}
             onScaleChange={setHandScale}
           >
             {showPokerHandLabel && (

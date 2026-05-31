@@ -75,7 +75,13 @@ function saveLayout(layout: LogLayout): void {
   }
 }
 
-const LogPanel = styled.div<{ $width: number; $height: number; $collapsed: boolean; $editMode?: boolean }>`
+const LogPanel = styled.div<{
+  $width: number;
+  $height: number;
+  $collapsed: boolean;
+  $editMode?: boolean;
+  $dimmed?: boolean;
+}>`
   width: ${(p) => p.$width}px;
   height: ${(p) => (p.$collapsed ? 'auto' : `${p.$height}px`)};
   min-width: 180px;
@@ -92,6 +98,9 @@ const LogPanel = styled.div<{ $width: number; $height: number; $collapsed: boole
   color: #eee;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   overflow: hidden;
+  opacity: ${(p) => (p.$dimmed ? 0.38 : 1)};
+  pointer-events: ${(p) => (p.$dimmed ? 'none' : 'auto')};
+  transition: opacity 0.15s ease;
   resize: ${(p) => (p.$collapsed || !p.$editMode ? 'none' : 'both')};
   ${(p) =>
     p.$editMode
@@ -164,7 +173,9 @@ const Entry = styled.div<{ $type: string }>`
 
 const GameLog: React.FC = () => {
   const { state } = useGame();
-  const { layoutEditMode } = useHudLayout();
+  const { layoutEditMode, isEditingLayoutGroup } = useHudLayout();
+  const groupActive = isEditingLayoutGroup('log');
+  const dimmed = layoutEditMode && !groupActive;
   const nodeRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<LogLayout>(loadLayout());
   const saveTimerRef = useRef<number | null>(null);
@@ -211,7 +222,7 @@ const GameLog: React.FC = () => {
 
   const onResize = useCallback(() => {
     const el = nodeRef.current;
-    if (!el || layoutRef.current.collapsed || !layoutEditMode) return;
+    if (!el || layoutRef.current.collapsed || !groupActive) return;
     const width = el.offsetWidth;
     const height = el.offsetHeight;
     if (
@@ -221,7 +232,7 @@ const GameLog: React.FC = () => {
       return;
     }
     persistLayout({ ...layoutRef.current, width, height });
-  }, [persistLayout, layoutEditMode]);
+  }, [persistLayout, groupActive]);
 
   useEffect(() => {
     const el = nodeRef.current;
@@ -237,7 +248,7 @@ const GameLog: React.FC = () => {
     <Draggable
       nodeRef={nodeRef}
       handle=".log-drag-handle"
-      disabled={!layoutEditMode}
+      disabled={!groupActive}
       position={{ x: layout.x, y: layout.y }}
       onDrag={onDrag}
       onStop={onDrag}
@@ -247,11 +258,17 @@ const GameLog: React.FC = () => {
         $width={layout.width}
         $height={layout.height}
         $collapsed={layout.collapsed}
-        $editMode={layoutEditMode}
-        style={{ position: 'fixed', left: 0, top: 0, zIndex: layoutEditMode ? 128 : 85 }}
+        $editMode={groupActive}
+        $dimmed={dimmed}
+        style={{
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          zIndex: groupActive ? 140 : layoutEditMode ? 80 : 85,
+        }}
       >
         <LogHeader className="log-drag-handle">
-          <span>{layoutEditMode ? '⠿ Game Log' : 'Game Log'}</span>
+          <span>{groupActive ? '⠿ Game Log' : 'Game Log'}</span>
           <CollapseBtn
             type="button"
             onClick={() =>

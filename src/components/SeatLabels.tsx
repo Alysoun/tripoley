@@ -9,8 +9,6 @@ import { useAchievements } from '../context/AchievementContext';
 import { useHudLayout } from '../context/HudLayoutContext';
 import {
   MAX_SEAT_LABEL_OFFSET_PX,
-  MAX_SEAT_LABEL_SCALE,
-  MIN_SEAT_LABEL_SCALE,
   SeatLabelOffset,
   clampSeatLabelOffset,
 } from './hudPanelLayout';
@@ -26,12 +24,14 @@ interface SeatLabelsProps {
   lastPlayedBySeat: Record<number, Card | null>;
 }
 
-const AnchorRoot = styled.div<{ $x: number; $y: number; $editMode?: boolean }>`
+const AnchorRoot = styled.div<{ $x: number; $y: number; $editMode?: boolean; $dimmed?: boolean }>`
   position: fixed;
   left: ${(p) => p.$x}px;
   top: ${(p) => p.$y}px;
-  z-index: ${(p) => (p.$editMode ? 130 : 56)};
+  z-index: ${(p) => (p.$editMode ? 140 : p.$dimmed ? 52 : 56)};
+  opacity: ${(p) => (p.$dimmed ? 0.38 : 1)};
   pointer-events: ${(p) => (p.$editMode ? 'auto' : 'none')};
+  transition: opacity 0.15s ease;
 `;
 
 const DragSurface = styled.div<{ $scale: number; $editMode: boolean }>`
@@ -183,40 +183,6 @@ const DragBounds = styled.div`
   pointer-events: none;
 `;
 
-const EditToolbar = styled.div`
-  position: fixed;
-  left: 50%;
-  top: 190px;
-  transform: translateX(-50%);
-  z-index: 122;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 12px 16px;
-  max-width: min(96vw, 720px);
-  background: rgba(0, 0, 0, 0.82);
-  color: #ffd700;
-  border: 1px solid rgba(255, 215, 0, 0.35);
-  border-radius: 999px;
-  padding: 8px 16px;
-  font-size: 0.82rem;
-  pointer-events: auto;
-`;
-
-const ScaleControl = styled.label`
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #ddd;
-  white-space: nowrap;
-
-  input[type='range'] {
-    width: 120px;
-    accent-color: #ffd700;
-  }
-`;
-
 type SeatLabelItemProps = {
   player: Player;
   isDealer: boolean;
@@ -229,6 +195,7 @@ type SeatLabelItemProps = {
   anchorY: number;
   offset: SeatLabelOffset;
   editMode: boolean;
+  dimmed?: boolean;
   onOffsetChange: (seatIndex: number, offset: SeatLabelOffset) => void;
 };
 
@@ -244,6 +211,7 @@ const SeatLabelItem: React.FC<SeatLabelItemProps> = ({
   anchorY,
   offset,
   editMode,
+  dimmed,
   onOffsetChange,
 }) => {
   const { activeEffects } = useAchievements();
@@ -285,7 +253,7 @@ const SeatLabelItem: React.FC<SeatLabelItemProps> = ({
   );
 
   return (
-    <AnchorRoot $x={anchorX} $y={anchorY} $editMode={editMode}>
+    <AnchorRoot $x={anchorX} $y={anchorY} $editMode={editMode} $dimmed={dimmed}>
       {editMode && (
         <>
           <AnchorMarker aria-hidden />
@@ -324,11 +292,13 @@ const SeatLabels: React.FC<SeatLabelsProps> = ({
 }) => {
   const {
     layoutEditMode,
+    isEditingLayoutGroup,
     seatLabelScale,
     seatLabelOffsets,
-    setSeatLabelScale,
     setSeatLabelOffset,
   } = useHudLayout();
+  const groupActive = isEditingLayoutGroup('opponents');
+  const dimmed = layoutEditMode && !groupActive;
 
   const visiblePlayers = players.filter((p) => {
     if (!p.isHuman) return true;
@@ -340,28 +310,9 @@ const SeatLabels: React.FC<SeatLabelsProps> = ({
   const compact = totalPlayers >= 8;
   const anchorPositions = useSeatLabelAnchorPositions(true, totalPlayers);
   const screenPositions = useSeatLabelPositions(true, totalPlayers, seatLabelOffsets);
-  const hasPositions = visiblePlayers.some((p) => screenPositions[p.id]);
 
   return createPortal(
     <>
-      {layoutEditMode && hasPositions && (
-        <EditToolbar>
-          <span>Grab anywhere on an opponent label (dashed outline) and drag within the blue box</span>
-          <ScaleControl>
-            Opponent label size
-            <input
-              type="range"
-              min={MIN_SEAT_LABEL_SCALE}
-              max={MAX_SEAT_LABEL_SCALE}
-              step={0.05}
-              value={seatLabelScale}
-              onChange={(e) => setSeatLabelScale(Number(e.target.value))}
-              aria-label="Opponent label size"
-            />
-            {Math.round(seatLabelScale * 100)}%
-          </ScaleControl>
-        </EditToolbar>
-      )}
       {visiblePlayers.map((player) => {
         const anchor = anchorPositions[player.id];
         const point = screenPositions[player.id];
@@ -380,7 +331,8 @@ const SeatLabels: React.FC<SeatLabelsProps> = ({
             anchorX={anchor.x}
             anchorY={anchor.y}
             offset={seatLabelOffsets[player.id] ?? { dx: 0, dy: 0 }}
-            editMode={layoutEditMode}
+            editMode={groupActive}
+            dimmed={dimmed}
             onOffsetChange={setSeatLabelOffset}
           />
         );
