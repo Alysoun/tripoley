@@ -125,7 +125,7 @@ describe('achievement evaluate unlocks', () => {
     expect(foldWin.stats.largestPokerPot).toBe(0);
 
     const showdown = freshSave();
-    recordPokerWin(showdown, 24, 'Kings full of Twos', {
+    recordPokerWin(showdown, 24, 'Kings Full of Twos', {
       allOpponentsFolded: false,
       ironWillCall: true,
       isShowdown: true,
@@ -139,14 +139,14 @@ describe('achievement evaluate unlocks', () => {
 
   it('requires full house or better for poker face', () => {
     const data = freshSave();
-    recordPokerWin(data, 10, 'Two pair, Kings and Nines', {
+    recordPokerWin(data, 10, 'Two Pair, Kings and Nines', {
       allOpponentsFolded: false,
       ironWillCall: false,
       isShowdown: true,
     });
     expect(unlockedIds(data)).not.toContain('poker_face');
 
-    recordPokerWin(data, 10, 'Kings full of Twos', {
+    recordPokerWin(data, 10, 'Kings Full of Twos', {
       allOpponentsFolded: false,
       ironWillCall: false,
       isShowdown: true,

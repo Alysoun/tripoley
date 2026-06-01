@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createCard } from '../cards';
-import { comparePokerHands, evaluateBestPokerHand } from '../poker';
+import {
+  comparePokerHands,
+  evaluateBestPokerHand,
+  formatPokerWinPhrase,
+} from '../poker';
 
 const c = (suit: 'hearts' | 'diamonds' | 'clubs' | 'spades', value: string) =>
   createCard(suit, value as 'A');
@@ -57,45 +61,61 @@ describe('poker hand evaluation', () => {
   });
 
   it('labels hands with rank detail for transparency', () => {
-    expect(
-      evaluateBestPokerHand([
-        c('hearts', 'K'),
-        c('diamonds', 'K'),
-        c('clubs', '5'),
-        c('spades', '3'),
-        c('hearts', '2'),
-      ]).label
-    ).toBe('Pair of Kings');
+    const pairKings = evaluateBestPokerHand([
+      c('hearts', 'K'),
+      c('diamonds', 'K'),
+      c('clubs', '5'),
+      c('spades', '3'),
+      c('hearts', '2'),
+    ]);
+    expect(pairKings.label).toBe('Pair of Kings');
+    expect(formatPokerWinPhrase(pairKings.rank, pairKings.label)).toBe('a pair of kings');
 
-    expect(
-      evaluateBestPokerHand([
-        c('hearts', 'K'),
-        c('diamonds', 'K'),
-        c('clubs', '9'),
-        c('spades', '9'),
-        c('hearts', '2'),
-      ]).label
-    ).toBe('Two pair, Kings and Nines');
+    const twoPair = evaluateBestPokerHand([
+      c('hearts', 'K'),
+      c('diamonds', 'K'),
+      c('clubs', '9'),
+      c('spades', '9'),
+      c('hearts', '2'),
+    ]);
+    expect(twoPair.label).toBe('Two Pair, Kings and Nines');
+    expect(formatPokerWinPhrase(twoPair.rank, twoPair.label)).toBe(
+      'two pair, kings and nines'
+    );
 
-    expect(
-      evaluateBestPokerHand([
-        c('hearts', 'K'),
-        c('diamonds', 'K'),
-        c('clubs', 'K'),
-        c('spades', '2'),
-        c('hearts', '2'),
-      ]).label
-    ).toBe('Kings full of Twos');
+    const tripsFours = evaluateBestPokerHand([
+      c('hearts', '4'),
+      c('diamonds', '4'),
+      c('clubs', '4'),
+      c('spades', '9'),
+      c('hearts', '2'),
+    ]);
+    expect(tripsFours.label).toBe('Three of a Kind, Fours');
+    expect(formatPokerWinPhrase(tripsFours.rank, tripsFours.label)).toBe(
+      'three of a kind, fours'
+    );
 
-    expect(
-      evaluateBestPokerHand([
-        c('hearts', 'A'),
-        c('hearts', 'K'),
-        c('hearts', 'Q'),
-        c('hearts', 'J'),
-        c('hearts', '9'),
-      ]).label
-    ).toBe('Flush, ace high');
+    const fullHouse = evaluateBestPokerHand([
+      c('hearts', 'K'),
+      c('diamonds', 'K'),
+      c('clubs', 'K'),
+      c('spades', '2'),
+      c('hearts', '2'),
+    ]);
+    expect(fullHouse.label).toBe('Kings Full of Twos');
+    expect(formatPokerWinPhrase(fullHouse.rank, fullHouse.label)).toBe(
+      'kings full of twos'
+    );
+
+    const flush = evaluateBestPokerHand([
+      c('hearts', 'A'),
+      c('hearts', 'K'),
+      c('hearts', 'Q'),
+      c('hearts', 'J'),
+      c('hearts', '9'),
+    ]);
+    expect(flush.label).toBe('Flush, Ace-High');
+    expect(formatPokerWinPhrase(flush.rank, flush.label)).toBe('a flush, ace-high');
   });
 
   it('is antisymmetric for unequal hands', () => {

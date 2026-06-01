@@ -28,7 +28,11 @@ import {
   formatPlayerPlays,
   resolveLeadPassTurn,
 } from './michigan';
-import { comparePokerHands, evaluateBestPokerHand } from './poker';
+import {
+  comparePokerHands,
+  evaluateBestPokerHand,
+  formatPokerWinPhrase,
+} from './poker';
 import {
   GameState,
   GameAction,
@@ -490,6 +494,8 @@ function resolvePokerShowdown(state: GameState): GameState {
   let pot = clonePot(state.pot);
   pot.pot = potAmount - share * payoutWinners.length;
 
+  const handPhrase = formatPokerWinPhrase(bestEval.rank, bestEval.label);
+
   let next = appendLog(
     {
       ...state,
@@ -505,7 +511,7 @@ function resolvePokerShowdown(state: GameState): GameState {
     },
     log(
       payoutWinners.length > 0
-        ? `Poker: ${payoutWinners.map((w) => logPlayerName(state.players[w])).join(', ')} win ${share} with ${bestEval.label}`
+        ? `Poker: ${payoutWinners.map((w) => logPlayerName(state.players[w])).join(', ')} win ${share} with ${handPhrase}`
         : `Poker: ${winners.map((w) => logPlayerName(state.players[w])).join(', ')} had best hand but did not ante the POT — chips stay on the board`,
       payoutWinners.length > 0 ? 'success' : 'info'
     )
@@ -524,13 +530,13 @@ function resolvePokerShowdown(state: GameState): GameState {
   } else if (winners.length === 1) {
     lines.push(
       payoutWinners.length > 0
-        ? `${winnerNames[0]} wins ${share} chips with a ${bestEval.label}.`
-        : `${winnerNames[0]} had a ${bestEval.label} but did not ante the POT — chips remain.`
+        ? `${winnerNames[0]} wins ${share} chips with ${handPhrase}.`
+        : `${winnerNames[0]} had ${handPhrase} but did not ante the POT — chips remain.`
     );
   } else {
     lines.push(
       payoutWinners.length > 0
-        ? `${payoutWinners.map((w) => logPlayerName(state.players[w])).join(' and ')} split the pot — ${share} chips each with a ${bestEval.label}.`
+        ? `${payoutWinners.map((w) => logPlayerName(state.players[w])).join(' and ')} split the pot — ${share} chips each with ${handPhrase}.`
         : `Best hand (${bestEval.label}) but no winner anted the POT — chips remain.`
     );
   }

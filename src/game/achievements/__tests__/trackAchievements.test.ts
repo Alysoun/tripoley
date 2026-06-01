@@ -172,7 +172,7 @@ describe('applyAchievementTransition', () => {
         roundComplete: false,
         winners: [],
         folded: { 0: false, 1: false, 2: false, 3: false },
-        lastHandLabel: 'Kings full of Twos',
+        lastHandLabel: 'Kings Full of Twos',
         lastHandRank: 'full-house',
       },
       pot: { ...createEmptyPot(), pot: 30 },
@@ -200,7 +200,7 @@ describe('applyAchievementTransition', () => {
         currentBet: 15,
         playerBets: { 0: 0, 1: 15, 2: 15, 3: 15 },
         folded: { 0: false, 1: false, 2: true, 3: true },
-        lastHandLabel: 'Kings full of Twos',
+        lastHandLabel: 'Kings Full of Twos',
         lastHandRank: 'full-house',
       },
     };
@@ -211,7 +211,7 @@ describe('applyAchievementTransition', () => {
         roundComplete: true,
         winners: [HUMAN_ID],
         playerBets: { 0: 15, 1: 15, 2: 15, 3: 15 },
-        lastHandLabel: 'Kings full of Twos',
+        lastHandLabel: 'Kings Full of Twos',
         lastHandRank: 'full-house',
       },
     };

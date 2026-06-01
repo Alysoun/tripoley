@@ -83,7 +83,7 @@ function isRoyalStraightValues(values: number[]): boolean {
   return sorted.length === 5 && sorted.join(',') === '10,11,12,13,14';
 }
 
-/** Human-readable winning hand, e.g. "Pair of Kings" or "Kings full of Nines". */
+/** Short display label for HUD / logs, e.g. "Pair of Kings" or "Three of a Kind, Fours". */
 export function formatPokerHandLabel(
   rank: PokerHandRank,
   groups: Array<[number, number]>,
@@ -91,32 +91,53 @@ export function formatPokerHandLabel(
 ): string {
   switch (rank) {
     case 'high-card':
-      return `${rankLabel(values[0])} high`;
+      return `${rankLabel(values[0])}-High`;
     case 'pair':
       return `Pair of ${rankLabel(groups[0][0], true)}`;
     case 'two-pair':
-      return `Two pair, ${rankLabel(groups[0][0], true)} and ${rankLabel(groups[1][0], true)}`;
+      return `Two Pair, ${rankLabel(groups[0][0], true)} and ${rankLabel(groups[1][0], true)}`;
     case 'three-of-a-kind':
-      return `Three ${rankLabel(groups[0][0], true)}`;
+      return `Three of a Kind, ${rankLabel(groups[0][0], true)}`;
     case 'straight': {
       const high = straightHighRankValue(values);
-      return high === 5 ? 'Straight, five high' : `Straight, ${rankLabel(high).toLowerCase()} high`;
+      return high === 5 ? 'Five-High Straight' : `Straight, ${rankLabel(high)}-High`;
     }
     case 'flush':
-      return `Flush, ${rankLabel(values[0]).toLowerCase()} high`;
+      return `Flush, ${rankLabel(values[0])}-High`;
     case 'full-house':
-      return `${rankLabel(groups[0][0], true)} full of ${rankLabel(groups[1][0], true)}`;
+      return `${rankLabel(groups[0][0], true)} Full of ${rankLabel(groups[1][0], true)}`;
     case 'four-of-a-kind':
-      return `Four ${rankLabel(groups[0][0], true)}`;
+      return `Four of a Kind, ${rankLabel(groups[0][0], true)}`;
     case 'straight-flush':
-      if (isRoyalStraightValues(values)) return 'Royal flush';
+      if (isRoyalStraightValues(values)) return 'Royal Flush';
       {
         const high = straightHighRankValue(values);
-        if (high === 5) return 'Straight flush, five high';
-        return `Straight flush, ${rankLabel(high).toLowerCase()} high`;
+        if (high === 5) return 'Five-High Straight Flush';
+        return `Straight Flush, ${rankLabel(high)}-High`;
       }
     default:
-      return 'High card';
+      return 'High Card';
+  }
+}
+
+/** Phrase after "with" in win copy — correct article and casing, e.g. "a pair of kings". */
+export function formatPokerWinPhrase(rank: PokerHandRank, label: string): string {
+  const text = label.toLowerCase();
+  switch (rank) {
+    case 'pair':
+    case 'flush':
+    case 'straight':
+      return `a ${text}`;
+    case 'straight-flush':
+      return text === 'royal flush' ? 'a royal flush' : `a ${text}`;
+    case 'high-card':
+    case 'two-pair':
+    case 'three-of-a-kind':
+    case 'four-of-a-kind':
+    case 'full-house':
+      return text;
+    default:
+      return text;
   }
 }
 
