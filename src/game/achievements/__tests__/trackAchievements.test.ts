@@ -11,6 +11,7 @@ import {
   createAchievementSessionTracking,
   foldAchievementTransitions,
   hasPairAcesOrBetter,
+  humanCalledFacingBetGe15,
   isAchievementUnlocked,
   unlockIds,
 } from '../trackAchievements';
@@ -191,6 +192,7 @@ describe('applyAchievementTransition', () => {
     const foldResult = track(foldPrev, foldNext);
     expect(isAchievementUnlocked(foldResult.data, 'clean_sweep')).toBe(true);
     expect(isAchievementUnlocked(foldResult.data, 'high_roller')).toBe(false);
+    expect(isAchievementUnlocked(foldResult.data, 'iron_will')).toBe(false);
 
     const showdownPrev = {
       ...base,
@@ -219,6 +221,47 @@ describe('applyAchievementTransition', () => {
     expect(isAchievementUnlocked(showdownResult.data, 'high_roller')).toBe(true);
     expect(isAchievementUnlocked(showdownResult.data, 'poker_face')).toBe(true);
     expect(isAchievementUnlocked(showdownResult.data, 'iron_will')).toBe(true);
+  });
+
+  it('does not count opening a 15+ bet as Iron Will (must call a facing bet)', () => {
+    const prev = soloGameState({
+      phase: 'poker',
+      poker: {
+        ...initialGameState.poker,
+        currentBet: 0,
+        playerBets: { 0: 0, 1: 0, 2: 0, 3: 0 },
+        folded: { 0: false, 1: true, 2: true, 3: true },
+      },
+    });
+    const next = {
+      ...prev,
+      poker: {
+        ...prev.poker,
+        currentBet: 15,
+        playerBets: { 0: 15, 1: 0, 2: 0, 3: 0 },
+      },
+    };
+    expect(humanCalledFacingBetGe15(prev, next, HUMAN_ID)).toBe(false);
+  });
+
+  it('detects calling a 15+ facing bet', () => {
+    const prev = soloGameState({
+      phase: 'poker',
+      poker: {
+        ...initialGameState.poker,
+        currentBet: 15,
+        playerBets: { 0: 0, 1: 15, 2: 0, 3: 0 },
+        folded: { 0: false, 1: false, 2: true, 3: true },
+      },
+    });
+    const next = {
+      ...prev,
+      poker: {
+        ...prev.poker,
+        playerBets: { 0: 15, 1: 15, 2: 0, 3: 0 },
+      },
+    };
+    expect(humanCalledFacingBetGe15(prev, next, HUMAN_ID)).toBe(true);
   });
 
   it('unlocks michigan-based achievements from phase transitions', () => {

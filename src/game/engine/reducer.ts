@@ -495,6 +495,9 @@ function resolvePokerShowdown(state: GameState): GameState {
   pot.pot = potAmount - share * payoutWinners.length;
 
   const handPhrase = formatPokerWinPhrase(bestEval.rank, bestEval.label);
+  const foldedCount = state.players.filter((p) => state.poker.folded[p.id]).length;
+  const winByFoldsOnly =
+    contenders.length === 1 && foldedCount === state.players.length - 1;
 
   let next = appendLog(
     {
@@ -511,17 +514,18 @@ function resolvePokerShowdown(state: GameState): GameState {
     },
     log(
       payoutWinners.length > 0
-        ? `Poker: ${payoutWinners.map((w) => logPlayerName(state.players[w])).join(', ')} win ${share} with ${handPhrase}`
+        ? winByFoldsOnly
+          ? `Poker: ${payoutWinners.map((w) => logPlayerName(state.players[w])).join(', ')} win ${share} — all opponents folded`
+          : `Poker: ${payoutWinners.map((w) => logPlayerName(state.players[w])).join(', ')} win ${share} with ${handPhrase}`
         : `Poker: ${winners.map((w) => logPlayerName(state.players[w])).join(', ')} had best hand but did not ante the POT — chips stay on the board`,
       payoutWinners.length > 0 ? 'success' : 'info'
     )
   );
 
   const winnerNames = winners.map((w) => logPlayerName(state.players[w]));
-  const foldedCount = state.players.filter((p) => state.poker.folded[p.id]).length;
   const lines: string[] = [];
 
-  if (contenders.length === 1 && foldedCount === state.players.length - 1) {
+  if (winByFoldsOnly) {
     lines.push(
       payoutWinners.length > 0
         ? `${winnerNames[0]} wins ${share} chip${share === 1 ? '' : 's'} — all other players folded.`

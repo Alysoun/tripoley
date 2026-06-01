@@ -268,7 +268,8 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDef[] = [
 
     title: 'Iron Will',
 
-    description: 'Call a 15+ chip bet and win the showdown.',
+    description:
+      'Call a 15+ chip bet (not the total pot) and win at showdown — at least one opponent must still be in the hand.',
 
     perkLabel: 'Opponent hand-size tracker',
 

@@ -87,6 +87,30 @@ function humanId(state: GameState): number | null {
   return state.players.find((p) => p.isHuman)?.id ?? null;
 }
 
+/** True when the player matched an existing 15+ facing bet (a call, not opening the betting). */
+export function humanCalledFacingBetGe15(
+  prev: GameState,
+  next: GameState,
+  playerId: number
+): boolean {
+  const prevBet = prev.poker.playerBets[playerId] ?? 0;
+  const nextBet = next.poker.playerBets[playerId] ?? 0;
+  const facing = prev.poker.currentBet;
+  return (
+    facing >= 15 &&
+    prevBet < facing &&
+    nextBet > prevBet &&
+    nextBet === facing
+  );
+}
+
+/** Showdown = at least one opponent still in the hand (not a win by folds only). */
+export function pokerWasShowdown(state: GameState, humanPlayerId: number): boolean {
+  return state.players.some(
+    (p) => p.id !== humanPlayerId && !state.poker.folded[p.id]
+  );
+}
+
 export function hasPairAcesOrBetter(cards: Card[]): boolean {
   const byRank = new Map<string, number>();
   for (const c of cards) {
@@ -193,15 +217,16 @@ export function applyAchievementTransition(
   }
 
   if (prev.phase === 'poker' && next.phase === 'poker') {
-    const prevBet = prev.poker.playerBets[hid] ?? 0;
-    const nextBet = next.poker.playerBets[hid] ?? 0;
-    if (next.poker.currentBet >= 15 && nextBet > prevBet && nextBet >= next.poker.currentBet) {
+    if (humanCalledFacingBetGe15(prev, next, hid)) {
       flags.pokerHumanCalledBig = true;
     }
   }
 
   if (!prev.poker.roundComplete && next.poker.roundComplete && next.poker.winners.includes(hid)) {
-    const allFolded = next.players.every((p) => p.id === hid || next.poker.folded[p.id]);
+    const isShowdown = pokerWasShowdown(next, hid);
+    const allOpponentsFolded = !isShowdown;
+    const calledFacing15 =
+      flags.pokerHumanCalledBig || humanCalledFacingBetGe15(prev, next, hid);
     const handLabel = flags.pokerHumanHandLabel || next.poker.lastHandLabel || null;
     unlocks.push(
       ...recordPokerWin(
@@ -209,9 +234,9 @@ export function applyAchievementTransition(
         prev.pot.pot,
         handLabel,
         {
-          allOpponentsFolded: allFolded,
-          ironWillCall: flags.pokerHumanCalledBig && !allFolded,
-          isShowdown: !allFolded,
+          allOpponentsFolded,
+          ironWillCall: calledFacing15 && isShowdown,
+          isShowdown,
         },
         next.poker.lastHandRank
       )
