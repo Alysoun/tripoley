@@ -339,6 +339,32 @@ const PlayerHUD: React.FC = () => {
   const showPokerHandLabel = state.phase === 'poker' && !!pokerDisplay?.label;
   const handPanelHeight = fanSize.height + (showPokerHandLabel ? 38 : 0);
 
+  const catWalkFrames = useMemo(
+    () =>
+      Array.from(
+        { length: 12 },
+        (_, i) =>
+          `${import.meta.env.BASE_URL}assets/animation/cat_walk_512x512_12frames_spritesheet_v2_${i + 1}.png`
+      ),
+    []
+  );
+  const [catFrameIdx, setCatFrameIdx] = useState(0);
+  useEffect(() => {
+    if (!activeEffects.catWalk || !displayPlayer?.isHuman) return;
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      setCatFrameIdx(0);
+      return;
+    }
+    const id = window.setInterval(() => {
+      setCatFrameIdx((i) => (i + 1) % catWalkFrames.length);
+    }, 75);
+    return () => window.clearInterval(id);
+  }, [activeEffects.catWalk, displayPlayer?.isHuman, catWalkFrames.length]);
+
   if (state.players.length === 0 || state.phase === 'setup' || !displayPlayer) return null;
 
   const isTheirTurn =
@@ -404,32 +430,6 @@ const PlayerHUD: React.FC = () => {
   const showDeadHand = state.deadHand.length > 0;
   const canRename =
     displayPlayer.isHuman && humanPlayer && displayPlayer.id === humanPlayer.id;
-
-  const catWalkFrames = useMemo(
-    () =>
-      Array.from(
-        { length: 12 },
-        (_, i) =>
-          `${import.meta.env.BASE_URL}assets/animation/cat_walk_512x512_12frames_spritesheet_v2_${i + 1}.png`
-      ),
-    []
-  );
-  const [catFrameIdx, setCatFrameIdx] = useState(0);
-  useEffect(() => {
-    if (!activeEffects.catWalk || !displayPlayer.isHuman) return;
-    const prefersReduced =
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) {
-      setCatFrameIdx(0);
-      return;
-    }
-    const id = window.setInterval(() => {
-      setCatFrameIdx((i) => (i + 1) % catWalkFrames.length);
-    }, 75);
-    return () => window.clearInterval(id);
-  }, [activeEffects.catWalk, displayPlayer.isHuman, catWalkFrames.length]);
 
   const commitName = () => {
     const name = sanitizePlayerName(draftName);
