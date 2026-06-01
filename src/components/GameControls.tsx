@@ -11,7 +11,7 @@ import { useHudLayout } from '../context/HudLayoutContext';
 import { useSoloPauseUi } from '../context/SoloPauseUiContext';
 import LeaveTableButton from './LeaveTableButton';
 
-const Panel = styled.div`
+const Panel = styled.div<{ $elevated?: boolean }>`
   position: fixed;
   top: max(12px, env(safe-area-inset-top, 0px));
   left: max(12px, env(safe-area-inset-left, 0px));
@@ -20,7 +20,7 @@ const Panel = styled.div`
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  z-index: 100;
+  z-index: ${(p) => (p.$elevated ? 130 : 100)};
   pointer-events: none;
 
   & > * {
@@ -125,6 +125,34 @@ const SoundBtn = styled.button<{ $active?: boolean; $highlight?: boolean }>`
   }
 `;
 
+const LayoutBtnWrap = styled.div`
+  position: relative;
+  display: inline-flex;
+`;
+
+const LayoutOnboardingArrow = styled.span`
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  color: #ffd700;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.75));
+  animation: layoutArrowBounce 0.85s ease-in-out infinite;
+
+  @keyframes layoutArrowBounce {
+    0%,
+    100% {
+      transform: translateX(-50%) translateY(0);
+    }
+    50% {
+      transform: translateX(-50%) translateY(-10px);
+    }
+  }
+`;
+
 const GameControls: React.FC = () => {
   const { state } = useGame();
   const { unlockedCount } = useAchievements();
@@ -145,7 +173,7 @@ const GameControls: React.FC = () => {
   return (
     <>
       <LeaveTableButton />
-      <Panel>
+      <Panel $elevated={layoutOnboardingActive && layoutEditMode}>
         <PhaseBadge>{PHASE_LABELS[state.phase] || state.phase}</PhaseBadge>
         {state.suddenDeath?.active && (
           <SuddenDeathBadge title="Escalated endgame — multiplied antes and all-in poker">
@@ -177,29 +205,34 @@ const GameControls: React.FC = () => {
               🏆 {unlockedCount}
             </SoundBtn>
           )}
-          <SoundBtn
-            type="button"
-            $active={layoutEditMode}
-            $highlight={layoutOnboardingActive && layoutEditMode}
-            onClick={toggleLayoutEditMode}
-            aria-label={
-              layoutEditMode
-                ? 'Done moving UI — resume game'
-                : state.isSoloSession
-                  ? 'Pause and move UI panels, pot labels, and opponent labels'
-                  : 'Move UI panels, pot labels, and opponent labels'
-            }
-            title={
-              layoutEditMode
-                ? 'Done moving UI'
-                : state.isSoloSession
-                  ? 'Pause game and move UI panels, pot labels, and opponent labels'
-                  : 'Move UI panels, pot labels, and opponent labels'
-            }
-            aria-pressed={layoutEditMode}
-          >
-            ⠿
-          </SoundBtn>
+          <LayoutBtnWrap>
+            {layoutOnboardingActive && layoutEditMode && (
+              <LayoutOnboardingArrow aria-hidden>▲</LayoutOnboardingArrow>
+            )}
+            <SoundBtn
+              type="button"
+              $active={layoutEditMode}
+              $highlight={layoutOnboardingActive && layoutEditMode}
+              onClick={toggleLayoutEditMode}
+              aria-label={
+                layoutEditMode
+                  ? 'Done moving UI — resume game'
+                  : state.isSoloSession
+                    ? 'Pause and move UI panels, pot labels, and opponent labels'
+                    : 'Move UI panels, pot labels, and opponent labels'
+              }
+              title={
+                layoutEditMode
+                  ? 'Done moving UI'
+                  : state.isSoloSession
+                    ? 'Pause game and move UI panels, pot labels, and opponent labels'
+                    : 'Move UI panels, pot labels, and opponent labels'
+              }
+              aria-pressed={layoutEditMode}
+            >
+              ⠿
+            </SoundBtn>
+          </LayoutBtnWrap>
           {layoutEditMode && (
             <SoundBtn
               type="button"
