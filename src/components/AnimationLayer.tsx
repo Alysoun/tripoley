@@ -22,18 +22,24 @@ const Layer = styled.div`
   }
 `;
 
-const ChipToken = styled(motion.div)<{ $sparkle?: boolean }>`
+const ChipToken = styled(motion.div)<{ $sparkle?: boolean; $firework?: boolean }>`
   position: fixed;
   pointer-events: none;
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #fff6b3, #ffd700 45%, #c9a000);
+  background: radial-gradient(
+    circle at 35% 35%,
+    ${(p) => (p.$firework ? '#fff8e7' : '#fff6b3')},
+    ${(p) => (p.$firework ? '#ff9f43 40%, #ff6b6b 70%, #c9a000' : '#ffd700 45%, #c9a000')}
+  );
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow: ${(p) =>
-    p.$sparkle
-      ? '0 0 10px rgba(255, 215, 0, 0.85), 0 2px 6px rgba(0, 0, 0, 0.45)'
-      : '0 2px 6px rgba(0, 0, 0, 0.45)'};
+    p.$firework
+      ? '0 0 14px rgba(255, 159, 67, 0.95), 0 0 22px rgba(255, 107, 107, 0.55), 0 2px 6px rgba(0, 0, 0, 0.45)'
+      : p.$sparkle
+        ? '0 0 10px rgba(255, 215, 0, 0.85), 0 2px 6px rgba(0, 0, 0, 0.45)'
+        : '0 2px 6px rgba(0, 0, 0, 0.45)'};
 `;
 
 const FlyingCard = styled(motion.img)`
@@ -97,16 +103,21 @@ interface AnimItemProps {
   anim: AnimationType;
   onDone: () => void;
   neonTracers?: boolean;
+  potFirework?: boolean;
 }
 
 const AnimItem: React.FC<AnimItemProps> = ({
   anim,
   onDone,
   neonTracers = false,
+  potFirework = false,
 }) => {
   const [resolved, setResolved] = useState<ResolvedAnim | null>(null);
   const baseDelay = (anim.delayIndex ?? 0) * 0.11;
-  const tokenCount = anim.count ?? (anim.kind === 'potSweep' ? 6 : anim.kind === 'cardDeal' ? 3 : 3);
+  const sparkler = potFirework && anim.kind === 'potSweep';
+  const tokenCount =
+    anim.count ??
+    (anim.kind === 'potSweep' ? (sparkler ? 10 : 6) : anim.kind === 'cardDeal' ? 3 : 3);
   const cardRot = useMemo(() => (anim.id.charCodeAt(anim.id.length - 1) % 15) - 7, [anim.id]);
 
   useLayoutEffect(() => {
@@ -222,7 +233,8 @@ const AnimItem: React.FC<AnimItemProps> = ({
         return (
           <ChipToken
             key={i}
-            $sparkle={neonTracers}
+            $sparkle={neonTracers && !sparkler}
+            $firework={sparkler}
             style={{ left: startX, top: fy, x: '-50%', y: '-50%' }}
             initial={{ opacity: 0, scale: 0.45 }}
             animate={{
@@ -268,6 +280,7 @@ const AnimationLayer: React.FC = () => {
           key={anim.id}
           anim={anim}
           neonTracers={activeEffects.neonTracers}
+          potFirework={activeEffects.potFirework}
           onDone={() => dispatch({ type: 'REMOVE_ANIMATION', id: anim.id })}
         />
       ))}

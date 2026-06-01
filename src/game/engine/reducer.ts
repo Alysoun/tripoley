@@ -300,6 +300,10 @@ export function repairLoadedGameSession(state: GameState): GameState {
       next = { ...next, currentPlayer: next.dealerId };
     }
   }
+  if (next.isSoloSession == null && next.players.length > 0) {
+    const humanCount = next.players.filter((p) => p.isHuman).length;
+    next = { ...next, isSoloSession: humanCount === 1 };
+  }
   return next;
 }
 

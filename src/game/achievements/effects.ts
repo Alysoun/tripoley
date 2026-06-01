@@ -59,6 +59,7 @@ const UNLOCK_PREFERENCE_KEY: Partial<
   action_focus: 'actionFocus',
 
   instant_fan: 'instantFan',
+  cat_walk: 'catWalk',
 
 };
 
@@ -187,6 +188,8 @@ export function getActiveEffects(
     actionFocus: u('veteran') && p.actionFocus,
 
     instantFan: u('swift_lead') && p.instantFan,
+
+    catWalk: u('kitty_whisperer') && p.catWalk,
 
     victoryFanfare,
 

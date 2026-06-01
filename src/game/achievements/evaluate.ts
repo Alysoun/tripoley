@@ -78,6 +78,10 @@ function progressForStat(data: AchievementSaveData, id: AchievementId): number {
 
       return stats.blindAuctionsWon;
 
+    case 'kitty_whisperer':
+
+      return stats.michiganWins;
+
     case 'sound_machine':
 
     case 'heart_hunter':
@@ -288,13 +292,15 @@ export function recordPokerWin(
 
   handLabel: string | null,
 
-  opts: { allOpponentsFolded: boolean; ironWillCall: boolean }
+  opts: { allOpponentsFolded: boolean; ironWillCall: boolean; isShowdown: boolean }
 
 ): AchievementUnlockEvent[] {
 
   data.stats.pokerWins += 1;
 
-  data.stats.largestPokerPot = Math.max(data.stats.largestPokerPot, potTotal);
+  if (opts.isShowdown) {
+    data.stats.largestPokerPot = Math.max(data.stats.largestPokerPot, potTotal);
+  }
 
   if (handLabel && /full house|four of a kind|straight flush|royal flush/i.test(handLabel)) {
 
@@ -451,33 +457,22 @@ export function recordGameStarted(data: AchievementSaveData): AchievementUnlockE
 
 
 export function getAchievementDisplayProgress(
-
   data: AchievementSaveData,
-
   id: AchievementId
-
 ): { current: number; target: number | null; unlocked: boolean } {
-
   const def = ACHIEVEMENT_BY_ID[id];
-
   const entry = data.achievements[id];
-
   const unlocked = entry.unlockedAt != null;
 
   if (unlocked) {
-
     return { current: def.target ?? 1, target: def.target ?? 1, unlocked: true };
-
   }
 
   if (def.target != null) {
-
-    return { current: entry.progress, target: def.target, unlocked: false };
-
+    return { current: progressForStat(data, id), target: def.target, unlocked: false };
   }
 
   return { current: entry.progress, target: 1, unlocked: false };
-
 }
 
 

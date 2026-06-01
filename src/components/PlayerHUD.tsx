@@ -36,6 +36,7 @@ import { useCardFanStackEnforcer } from '../hooks/useCardFanStackEnforcer';
 const MICHIGAN_PLAY_DRAG = 'application/x-tripoley-michigan-play';
 
 const CompactHeader = styled.div`
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -43,6 +44,51 @@ const CompactHeader = styled.div`
   gap: 6px 10px;
   margin-bottom: 4px;
   font-size: 0.82rem;
+  overflow: visible;
+`;
+
+const CAT_WALK_DISPLAY_W = 80;
+const CAT_WALK_DISPLAY_H = 44;
+
+const CatTrack = styled.div`
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -${CAT_WALK_DISPLAY_H}px;
+  height: ${CAT_WALK_DISPLAY_H}px;
+  pointer-events: none;
+  opacity: 0.95;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
+`;
+
+const CatWalkerImg = styled.img`
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: ${CAT_WALK_DISPLAY_W}px;
+  height: ${CAT_WALK_DISPLAY_H}px;
+  object-fit: contain;
+  pointer-events: none;
+
+  transform: translate3d(0, 0, 0) scaleX(1);
+  will-change: left, transform;
+
+  animation: catwalk-bounce 12s linear infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    left: 6px;
+  }
+`;
+
+const catwalkKeyframes = `
+@keyframes catwalk-bounce {
+  /* Use left so 100% refers to the CatTrack width (HUD bar). */
+  0% { left: 0; transform: translate3d(0, 0, 0) scaleX(1); }
+  49.999% { left: calc(100% - ${CAT_WALK_DISPLAY_W}px); transform: translate3d(0, 0, 0) scaleX(1); }
+  50% { left: calc(100% - ${CAT_WALK_DISPLAY_W}px); transform: translate3d(0, 0, 0) scaleX(-1); }
+  100% { left: 0; transform: translate3d(0, 0, 0) scaleX(-1); }
+}
 `;
 
 const HeaderMain = styled.div`
@@ -359,6 +405,32 @@ const PlayerHUD: React.FC = () => {
   const canRename =
     displayPlayer.isHuman && humanPlayer && displayPlayer.id === humanPlayer.id;
 
+  const catWalkFrames = useMemo(
+    () =>
+      Array.from(
+        { length: 12 },
+        (_, i) =>
+          `${import.meta.env.BASE_URL}assets/animation/cat_walk_512x512_12frames_spritesheet_v2_${i + 1}.png`
+      ),
+    []
+  );
+  const [catFrameIdx, setCatFrameIdx] = useState(0);
+  useEffect(() => {
+    if (!activeEffects.catWalk || !displayPlayer.isHuman) return;
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      setCatFrameIdx(0);
+      return;
+    }
+    const id = window.setInterval(() => {
+      setCatFrameIdx((i) => (i + 1) % catWalkFrames.length);
+    }, 75);
+    return () => window.clearInterval(id);
+  }, [activeEffects.catWalk, displayPlayer.isHuman, catWalkFrames.length]);
+
   const commitName = () => {
     const name = sanitizePlayerName(draftName);
     dispatch({ type: 'CHANGE_PLAYER_NAME', name, playerId: displayPlayer.id });
@@ -370,6 +442,18 @@ const PlayerHUD: React.FC = () => {
     <>
       <DraggableHudPanel id="info" title="Your seat">
         <CompactHeader>
+          {activeEffects.catWalk && displayPlayer.isHuman && (
+            <>
+              <style>{catwalkKeyframes}</style>
+              <CatTrack aria-hidden>
+                <CatWalkerImg
+                  src={catWalkFrames[catFrameIdx]}
+                  alt=""
+                  draggable={false}
+                />
+              </CatTrack>
+            </>
+          )}
           <HeaderMain>
             <NameRow $gilded={activeEffects.gildedBorders && displayPlayer.isHuman}>
               {editingName && canRename ? (

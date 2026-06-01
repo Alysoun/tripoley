@@ -7,6 +7,7 @@ import {
   LifetimeStats,
 } from './types';
 
+import { syncProgressFromStats } from './evaluate';
 import { migratePreferences } from './effects';
 
 
@@ -114,31 +115,22 @@ function loadLegacyRaw(): Partial<AchievementSaveData> | null {
 
 
 export function loadAchievementData(): AchievementSaveData {
-
   try {
-
     const parsed = loadLegacyRaw();
-
     if (!parsed) return defaultSaveData();
 
     const base = defaultSaveData();
 
-    return {
-
+    const data = {
       stats: { ...base.stats, ...parsed.stats },
-
       achievements: { ...base.achievements, ...parsed.achievements },
-
       preferences: migratePreferences(parsed),
-
     };
-
+    syncProgressFromStats(data);
+    return data;
   } catch {
-
     return defaultSaveData();
-
   }
-
 }
 
 

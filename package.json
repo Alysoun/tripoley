@@ -43,6 +43,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:achievements": "vitest run src/game/achievements",
     "test:sim": "vitest run src/game/engine/__tests__/simulation.test.ts",
     "deploy": "npm run build && gh-pages -d dist"
   }

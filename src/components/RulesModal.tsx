@@ -153,6 +153,18 @@ const Actions = styled.div`
   text-align: center;
 `;
 
+const CreditsNote = styled.p`
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #9aa0a6;
+
+  a {
+    color: #c9d1d9;
+    text-decoration: underline;
+  }
+`;
+
 const CloseBtn = styled.button`
   padding: 12px 28px;
   border: none;
@@ -257,6 +269,16 @@ const RulesModal: React.FC<RulesModalProps> = ({
           <CloseBtn type="button" onClick={onClose}>
             Close
           </CloseBtn>
+          <CreditsNote>
+            Cat walk animation used by the “Kitty Whisperer” achievement is from FrolicForge:{' '}
+            <a
+              href="https://frolicforge.itch.io/cat-animation-high-res"
+              target="_blank"
+              rel="noreferrer"
+            >
+              frolicforge.itch.io/cat-animation-high-res
+            </a>
+          </CreditsNote>
         </Actions>
       </Box>
     </Overlay>

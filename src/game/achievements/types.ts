@@ -13,6 +13,7 @@ export type AchievementId =
   | 'grand_strategist'
 
   | 'kitty_cat'
+  | 'kitty_whisperer'
 
   | 'high_roller'
 
@@ -95,6 +96,7 @@ export type AchievementUnlock =
   | 'action_focus'
 
   | 'instant_fan'
+  | 'cat_walk'
 
   | 'fanfare_picker';
 
@@ -135,6 +137,7 @@ export interface AchievementPreferences {
   actionFocus: boolean;
 
   instantFan: boolean;
+  catWalk: boolean;
 
   victoryFanfare: VictoryFanfareVariant;
 
@@ -177,6 +180,7 @@ export const DEFAULT_PREFERENCES: AchievementPreferences = {
   actionFocus: true,
 
   instantFan: true,
+  catWalk: true,
 
   victoryFanfare: 'classic',
 
@@ -315,6 +319,7 @@ export interface ActiveAchievementEffects {
   actionFocus: boolean;
 
   instantFan: boolean;
+  catWalk: boolean;
 
   victoryFanfare: VictoryFanfareVariant;
 
@@ -359,6 +364,7 @@ export const NO_ACTIVE_EFFECTS: ActiveAchievementEffects = {
   actionFocus: false,
 
   instantFan: false,
+  catWalk: false,
 
   victoryFanfare: 'classic',
 

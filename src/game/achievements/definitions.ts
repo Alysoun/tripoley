@@ -119,6 +119,16 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDef[] = [
   },
 
   {
+    id: 'kitty_whisperer',
+    title: 'Kitty Whisperer',
+    description: 'Win the Kitty 50 times across your profile.',
+    perkLabel: 'A cat walks across your HUD bar',
+    unlock: 'cat_walk',
+    target: 50,
+    category: 'cosmetic',
+  },
+
+  {
 
     id: 'high_roller',
 

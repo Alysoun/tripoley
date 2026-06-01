@@ -71,3 +71,7 @@ npm run deploy
 
 - AI opponents run entirely in the browser (`src/game/engine/ai.ts`). No backend required.
 - Game progress is saved in `localStorage` until you **Leave Table** or reach **Game Over**; layout prefs also use `localStorage`.
+
+## Asset credits
+
+- **Cat walk animation (achievement perk)**: FrolicForge — `https://frolicforge.itch.io/cat-animation-high-res`
