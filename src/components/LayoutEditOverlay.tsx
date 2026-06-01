@@ -96,6 +96,7 @@ const LayoutEditOverlay: React.FC = () => {
   const { state } = useGame();
   const {
     layoutEditMode,
+    layoutOnboardingActive,
     layoutEditGroup,
     setLayoutEditGroup,
     seatLabelScale,
@@ -106,14 +107,27 @@ const LayoutEditOverlay: React.FC = () => {
     setGameLogLayout,
   } = useHudLayout();
 
-  if (!layoutEditMode || !state.isSoloSession) return null;
+  const showOverlay =
+    layoutEditMode && (layoutOnboardingActive || !!state.isSoloSession);
+
+  if (!showOverlay) return null;
 
   return (
     <>
       <Backdrop aria-hidden />
       <Banner role="status" aria-live="polite">
-        <strong>Layout mode — game paused</strong>
-        Choose one group to adjust at a time. Tap ⠿ when finished.
+        {layoutOnboardingActive ? (
+          <>
+            <strong>Welcome — fit the table to your screen</strong>
+            Panels often sit wrong on first load. Drag the gold handles, use the tabs below,
+            then tap ⠿ (top right) when it looks right. The game is paused until then.
+          </>
+        ) : (
+          <>
+            <strong>Layout mode — game paused</strong>
+            Choose one group to adjust at a time. Tap ⠿ when finished.
+          </>
+        )}
         <GroupRow role="tablist" aria-label="Layout groups">
           {LAYOUT_EDIT_GROUP_ORDER.map((group) => (
             <GroupBtn

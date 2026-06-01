@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -34,8 +35,24 @@ import {
   saveStoredHudLayout,
   SeatLabelOffset,
   SeatLabelOffsets,
+  StoredHudLayout,
 } from '../components/hudPanelLayout';
 import { SectionLabel } from '../types/GameTypes';
+import {
+  hasCompletedLayoutOnboarding,
+  markLayoutOnboardingComplete,
+} from '../utils/layoutOnboarding';
+
+function reflowStoredLayout(stored: StoredHudLayout, editing: boolean): StoredHudLayout {
+  return {
+    ...stored,
+    panels: clampHudLayout(stored.panels, {
+      editing,
+      handScale: stored.handScale,
+    }),
+    gameLog: clampGameLogLayout(stored.gameLog ?? defaultGameLogLayout(), editing),
+  };
+}
 
 type HudLayoutContextValue = {
   layout: HudLayout;
@@ -45,11 +62,13 @@ type HudLayoutContextValue = {
   seatLabelScale: number;
   seatLabelOffsets: SeatLabelOffsets;
   layoutEditMode: boolean;
+  layoutOnboardingActive: boolean;
   layoutEditGroup: LayoutEditGroup;
   setLayoutEditMode: (enabled: boolean) => void;
   setLayoutEditGroup: (group: LayoutEditGroup) => void;
   isEditingLayoutGroup: (group: LayoutEditGroup) => boolean;
   toggleLayoutEditMode: () => void;
+  beginLayoutOnboardingIfNeeded: () => void;
   setPanelPosition: (id: HudPanelId, position: PanelPosition) => void;
   setGameLogLayout: (patch: Partial<GameLogLayout>) => void;
   setPotLabelOffset: (label: SectionLabel, offset: PotLabelOffset) => void;
@@ -66,12 +85,44 @@ const HudLayoutContext = createContext<HudLayoutContextValue | null>(null);
 export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [stored, setStored] = useState(loadStoredHudLayout);
   const [layoutEditMode, setLayoutEditModeState] = useState(false);
+  const [layoutOnboardingActive, setLayoutOnboardingActive] = useState(false);
   const [layoutEditGroup, setLayoutEditGroup] = useState<LayoutEditGroup>(DEFAULT_LAYOUT_EDIT_GROUP);
   const [focusedPanel, setFocusedPanel] = useState<HudPanelId | null>(null);
+  const onboardingRequestedRef = useRef(false);
+  const layoutOnboardingActiveRef = useRef(false);
+
+  useEffect(() => {
+    layoutOnboardingActiveRef.current = layoutOnboardingActive;
+  }, [layoutOnboardingActive]);
 
   useEffect(() => {
     saveStoredHudLayout(stored);
   }, [stored]);
+
+  useEffect(() => {
+    let frame = 0;
+    const syncViewport = () => {
+      setStored((prev) => reflowStoredLayout(prev, layoutEditMode));
+    };
+    syncViewport();
+    frame = requestAnimationFrame(() => {
+      syncViewport();
+      requestAnimationFrame(syncViewport);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  const finishLayoutEdit = useCallback((enabled: boolean) => {
+    if (!enabled && layoutOnboardingActiveRef.current) {
+      markLayoutOnboardingComplete();
+      setLayoutOnboardingActive(false);
+    }
+    setLayoutEditModeState(enabled);
+    if (!enabled) {
+      setLayoutEditGroup(DEFAULT_LAYOUT_EDIT_GROUP);
+      setFocusedPanel(null);
+    }
+  }, []);
 
   const layout = stored.panels;
   const handScale = stored.handScale;
@@ -96,12 +147,23 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, []);
 
   const setLayoutEditMode = useCallback((enabled: boolean) => {
-    setLayoutEditModeState(enabled);
-    if (!enabled) {
-      setLayoutEditGroup(DEFAULT_LAYOUT_EDIT_GROUP);
-      setFocusedPanel(null);
+    finishLayoutEdit(enabled);
+  }, [finishLayoutEdit]);
+
+  const beginLayoutOnboardingIfNeeded = useCallback(() => {
+    if (hasCompletedLayoutOnboarding() || onboardingRequestedRef.current || layoutEditMode) {
+      return;
     }
-  }, []);
+    onboardingRequestedRef.current = true;
+    const start = () => {
+      setStored((prev) => reflowStoredLayout(prev, true));
+      setLayoutOnboardingActive(true);
+      layoutOnboardingActiveRef.current = true;
+      setLayoutEditModeState(true);
+      setLayoutEditGroup(DEFAULT_LAYOUT_EDIT_GROUP);
+    };
+    requestAnimationFrame(() => requestAnimationFrame(start));
+  }, [layoutEditMode]);
 
   const setPanelPosition = useCallback(
     (id: HudPanelId, position: PanelPosition) => {
@@ -190,11 +252,16 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const toggleLayoutEditMode = useCallback(() => {
     setLayoutEditModeState((prev) => {
-      if (prev) {
+      const next = !prev;
+      if (!next) {
+        if (layoutOnboardingActiveRef.current) {
+          markLayoutOnboardingComplete();
+          setLayoutOnboardingActive(false);
+        }
         setLayoutEditGroup(DEFAULT_LAYOUT_EDIT_GROUP);
         setFocusedPanel(null);
       }
-      return !prev;
+      return next;
     });
   }, []);
 
@@ -215,11 +282,13 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       seatLabelScale,
       seatLabelOffsets,
       layoutEditMode,
+      layoutOnboardingActive,
       layoutEditGroup,
       setLayoutEditMode,
       setLayoutEditGroup: setLayoutEditGroupWithPrep,
       isEditingLayoutGroup,
       toggleLayoutEditMode,
+      beginLayoutOnboardingIfNeeded,
       setPanelPosition,
       setGameLogLayout,
       setPotLabelOffset,
@@ -238,9 +307,11 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       seatLabelScale,
       seatLabelOffsets,
       layoutEditMode,
+      layoutOnboardingActive,
       layoutEditGroup,
       isEditingLayoutGroup,
       setLayoutEditGroupWithPrep,
+      beginLayoutOnboardingIfNeeded,
       setPanelPosition,
       setGameLogLayout,
       setPotLabelOffset,

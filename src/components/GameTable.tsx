@@ -196,7 +196,7 @@ const SetupOverlay = styled.div`
 const GameTableContent: React.FC = () => {
   const { state, dispatch } = useGame();
   const { startGameAction, activeEffects } = useAchievements();
-  const { isEditingLayoutGroup } = useHudLayout();
+  const { isEditingLayoutGroup, beginLayoutOnboardingIfNeeded } = useHudLayout();
   useGameSounds();
   useAITurn();
   useSpectatorAutoPlay();
@@ -211,6 +211,14 @@ const GameTableContent: React.FC = () => {
   }, []);
 
   const isGameStarted = state.players.length > 0;
+  const hasHuman = state.players.some((p) => p.isHuman);
+
+  useEffect(() => {
+    if (!isGameStarted || !hasHuman || state.phase === 'setup' || state.phase === 'gameOver') {
+      return;
+    }
+    beginLayoutOnboardingIfNeeded();
+  }, [isGameStarted, hasHuman, state.phase, beginLayoutOnboardingIfNeeded]);
 
   useEffect(() => {
     if (debugAutoStarted.current || isGameStarted) return;

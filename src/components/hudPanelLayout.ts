@@ -269,21 +269,21 @@ export function defaultHudLayout(): HudLayout {
   const topInset = narrow || tablet || shortViewport ? 56 : 96;
 
   const bottomHandY = shortViewport
-    ? Math.max(topInset, h - (narrow ? 118 : 128))
+    ? Math.max(topInset, h - (narrow ? 118 : 132))
     : narrow
       ? Math.max(topInset, h - 120)
       : tablet
         ? Math.max(topInset, h - 132)
         : Math.max(120, h - 156);
   const bottomInfoY = shortViewport
-    ? topInset
+    ? Math.max(topInset, h - (narrow ? 132 : 148))
     : narrow
       ? topInset
       : tablet
         ? topInset
         : Math.max(96, h - 148);
   const bottomActionsY = shortViewport
-    ? Math.max(topInset, h - (narrow ? 248 : 268))
+    ? Math.max(topInset, h - (narrow ? 248 : 280))
     : narrow
       ? Math.max(topInset, h - 248)
       : tablet

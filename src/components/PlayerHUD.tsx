@@ -216,7 +216,7 @@ const NameBtn = styled.button`
 const PlayerHUD: React.FC = () => {
   const { state, dispatch } = useGame();
   const { activeEffects } = useAchievements();
-  const { handScale, isEditingLayoutGroup, setHandScale } = useHudLayout();
+  const { handScale, isEditingLayoutGroup, setHandScale, layoutOnboardingActive } = useHudLayout();
   const hudGroupActive = isEditingLayoutGroup('hud');
   const [viewSeat, setViewSeat] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -604,7 +604,7 @@ const PlayerHUD: React.FC = () => {
             </MichiganHint>
           )}
           <TurnTimerDisplay slot="general" />
-          <PlayerActionBar />
+          {!layoutOnboardingActive && <PlayerActionBar />}
         </DraggableHudPanel>
       )}
     </>

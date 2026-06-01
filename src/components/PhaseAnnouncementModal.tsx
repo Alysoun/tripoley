@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useGame } from '../context/GameContext';
+import { useHudLayout } from '../context/HudLayoutContext';
 import { soundManager } from '../utils/SoundEffects';
 import TurnTimerDisplay from './TurnTimerDisplay';
 
@@ -96,9 +97,10 @@ const ContinueBtn = styled.button`
 
 const PhaseAnnouncementModal: React.FC = () => {
   const { state, dispatch } = useGame();
+  const { layoutOnboardingActive } = useHudLayout();
   const announcement = state.announcement;
 
-  if (state.phase !== 'announcement' || !announcement) return null;
+  if (layoutOnboardingActive || state.phase !== 'announcement' || !announcement) return null;
 
   const continueLabel =
     state.announcementContinue === 'michigan'

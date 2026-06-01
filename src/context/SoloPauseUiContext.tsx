@@ -32,10 +32,12 @@ export function useSoloPauseUi(): SoloPauseUiContextValue {
   return ctx;
 }
 
-/** True when solo play should freeze AI turns and action timers (layout edit or rules modal). */
+/** True when play should freeze for layout edit (solo always; first-time onboarding for any table). */
 export function useSoloGamePaused(): boolean {
   const { state } = useGame();
-  const { layoutEditMode } = useHudLayout();
+  const { layoutEditMode, layoutOnboardingActive } = useHudLayout();
   const { rulesModalOpen } = useSoloPauseUi();
-  return !!state.isSoloSession && (layoutEditMode || rulesModalOpen);
+  if (rulesModalOpen && !!state.isSoloSession) return true;
+  if (!layoutEditMode) return false;
+  return !!state.isSoloSession || layoutOnboardingActive;
 }

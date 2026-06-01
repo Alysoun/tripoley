@@ -24,12 +24,25 @@ export function defaultGameLogLayout(): GameLogLayout {
   const w = viewportWidth();
   const h = viewportHeight();
   const tablet = w <= 768;
+  const narrow = w <= 480;
+  const width = tablet ? 220 : 240;
   const height = tablet ? 160 : 180;
+  /** Keep the log off the bottom-left HUD stack — top-right on roomier screens. */
+  const x = narrow
+    ? 8
+    : tablet
+      ? Math.max(8, w - width - 8)
+      : Math.max(16, w - width - 16);
+  const y = narrow
+    ? Math.max(56, 72)
+    : tablet
+      ? Math.max(56, 72)
+      : Math.max(72, Math.min(120, h - height - 200));
 
   return {
-    x: tablet ? Math.max(8, w - 236) : 16,
-    y: tablet ? Math.max(56, 72) : Math.max(100, h - 360),
-    width: tablet ? 220 : 240,
+    x,
+    y,
+    width,
     height,
     collapsed: false,
   };

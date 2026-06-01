@@ -81,19 +81,47 @@ const RightCluster = styled.div`
   flex-shrink: 0;
 `;
 
-const SoundBtn = styled.button<{ $active?: boolean }>`
+const SoundBtn = styled.button<{ $active?: boolean; $highlight?: boolean }>`
   padding: 10px 12px;
   border-radius: 20px;
   border: 1px solid
-    ${(p) => (p.$active ? 'rgba(255, 215, 0, 0.65)' : 'rgba(255, 255, 255, 0.2)')};
-  background: ${(p) => (p.$active ? 'rgba(40, 32, 0, 0.9)' : 'rgba(0, 0, 0, 0.75)')};
-  color: ${(p) => (p.$active ? '#ffd700' : 'white')};
+    ${(p) =>
+      p.$highlight
+        ? 'rgba(255, 215, 0, 0.95)'
+        : p.$active
+          ? 'rgba(255, 215, 0, 0.65)'
+          : 'rgba(255, 255, 255, 0.2)'};
+  background: ${(p) =>
+    p.$highlight
+      ? 'rgba(255, 215, 0, 0.28)'
+      : p.$active
+        ? 'rgba(40, 32, 0, 0.9)'
+        : 'rgba(0, 0, 0, 0.75)'};
+  color: ${(p) => (p.$active || p.$highlight ? '#ffd700' : 'white')};
   cursor: pointer;
   font-size: 1rem;
   line-height: 1;
+  box-shadow: ${(p) =>
+    p.$highlight ? '0 0 0 2px rgba(255, 215, 0, 0.35), 0 0 18px rgba(255, 215, 0, 0.45)' : 'none'};
+  animation: ${(p) => (p.$highlight ? 'layoutBtnPulse 1.6s ease-in-out infinite' : 'none')};
+
+  @keyframes layoutBtnPulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.06);
+    }
+  }
 
   &:hover {
-    background: ${(p) => (p.$active ? 'rgba(55, 44, 0, 0.95)' : 'rgba(0, 0, 0, 0.9)')};
+    background: ${(p) =>
+      p.$highlight
+        ? 'rgba(255, 215, 0, 0.38)'
+        : p.$active
+          ? 'rgba(55, 44, 0, 0.95)'
+          : 'rgba(0, 0, 0, 0.9)'};
   }
 `;
 
@@ -101,7 +129,7 @@ const GameControls: React.FC = () => {
   const { state } = useGame();
   const { unlockedCount } = useAchievements();
   const { toggleSound, isSoundEnabled } = useGameEffects();
-  const { layoutEditMode, toggleLayoutEditMode, resetLayout } = useHudLayout();
+  const { layoutEditMode, layoutOnboardingActive, toggleLayoutEditMode, resetLayout } = useHudLayout();
   const { rulesModalOpen, setRulesModalOpen } = useSoloPauseUi();
   const [showAchievements, setShowAchievements] = useState(false);
   const current = state.players[state.currentPlayer];
@@ -152,6 +180,7 @@ const GameControls: React.FC = () => {
           <SoundBtn
             type="button"
             $active={layoutEditMode}
+            $highlight={layoutOnboardingActive && layoutEditMode}
             onClick={toggleLayoutEditMode}
             aria-label={
               layoutEditMode
