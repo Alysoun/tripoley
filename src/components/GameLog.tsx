@@ -7,10 +7,10 @@ import {
   copySessionLogToClipboard,
   downloadSessionLog,
 } from '../game/sessionLogExport';
-import { sessionLogEntries } from '../game/engine/gameLog';
+import { sessionLogEntries, hasExportableSessionLog } from '../game/engine/gameLog';
 import {
   gameLogDragBounds,
-  MAX_GAME_LOG_HEIGHT_DESKTOP,
+  maxGameLogHeight,
   MIN_GAME_LOG_HEIGHT,
   MIN_GAME_LOG_WIDTH,
 } from './hudPanelLayout';
@@ -25,7 +25,7 @@ const LogPanel = styled.div<{
   width: ${(p) => p.$width}px;
   height: ${(p) => (p.$collapsed ? 'auto' : `${p.$height}px`)};
   min-width: ${MIN_GAME_LOG_WIDTH}px;
-  max-width: ${(p) => (p.$editMode ? 'calc(100vw - 16px)' : '360px')};
+  max-width: ${(p) => (p.$editMode ? 'calc(100vw - 16px)' : `${p.$width}px`)};
   display: flex;
   flex-direction: column;
   background: rgba(0, 0, 0, 0.88);
@@ -151,7 +151,7 @@ const GameLog: React.FC = () => {
   const dimmed = layoutEditMode && !groupActive;
   const nodeRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
-  const fullLog = state.recordFullSessionLog;
+  const canExport = hasExportableSessionLog(state);
   const totalEntries = sessionLogEntries(state).length;
 
   const onDrag = useCallback(
@@ -176,6 +176,7 @@ const GameLog: React.FC = () => {
   if (state.phase === 'setup') return null;
 
   const logBounds = groupActive ? gameLogDragBounds() : undefined;
+  const playMaxHeight = Math.min(gameLogLayout.height, maxGameLogHeight(false));
 
   return (
     <Draggable
@@ -201,16 +202,16 @@ const GameLog: React.FC = () => {
           zIndex: groupActive ? 140 : layoutEditMode ? 80 : 85,
           maxHeight: groupActive
             ? 'calc(100dvh - 64px)'
-            : `min(${MAX_GAME_LOG_HEIGHT_DESKTOP}px, calc(100dvh - 120px))`,
+            : `${playMaxHeight}px`,
         }}
       >
         <LogHeader>
           <LogTitle className="log-drag-handle">
             {groupActive ? '⠿ Game Log' : 'Game Log'}
-            {fullLog && <LogCount> · {totalEntries} saved</LogCount>}
+            {canExport && <LogCount> · {totalEntries} saved</LogCount>}
           </LogTitle>
           <HeaderActions>
-            {fullLog && (
+            {canExport && (
               <>
                 <HeaderBtn type="button" onClick={handleCopy}>
                   {copied ? 'Copied' : 'Copy'}

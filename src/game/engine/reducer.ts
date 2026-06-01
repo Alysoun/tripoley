@@ -873,7 +873,6 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
       if (playerCount < MIN_PLAYERS || playerCount > MAX_PLAYERS) return state;
       const dealerId = 0;
       const soloHuman = seats.filter((s) => s.isHuman).length === 1;
-      const aiOnly = seats.every((s) => !s.isHuman);
       resetLogCounter();
       const { players: dealt, deadHand } = dealHands(playerCount, dealerId);
       const players: Player[] = seats.map((seat, i) => ({
@@ -912,9 +911,10 @@ function reduceGameState(state: GameState, action: GameAction): GameState {
         achievementSession: soloHuman
           ? { sequenceTimedOut: false, leadPassUsed: false, humanLeadPasses: 0 }
           : undefined,
-        recordFullSessionLog: aiOnly,
-        sessionStartedAt: aiOnly ? Date.now() : undefined,
-        sessionLog: aiOnly ? [...opening] : undefined,
+        recordFullSessionLog: true,
+        sessionStartedAt: Date.now(),
+        sessionLog: [...opening],
+        sessionLogDroppedCount: 0,
         log: opening,
       };
       next = collectAntesFromPlayers(next);

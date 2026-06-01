@@ -114,9 +114,11 @@ export interface GameState {
   houseRules: HouseRules;
   roundNumber: number;
   log: GameLogEntry[];
-  /** Full chronological log for AI-only sessions (exportable). */
+  /** Full chronological log for export (FIFO capped at ~512KB). */
   sessionLog?: GameLogEntry[];
-  /** When true, every log line is kept in sessionLog. */
+  /** Lines removed from the front when the session log exceeded the byte cap. */
+  sessionLogDroppedCount?: number;
+  /** @deprecated All sessions now keep export logs; retained for older saves. */
   recordFullSessionLog?: boolean;
   sessionStartedAt?: number;
   soundEnabled: boolean;

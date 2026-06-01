@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { useGame } from '../context/GameContext';
 import { downloadSessionLog } from '../game/sessionLogExport';
+import { hasExportableSessionLog } from '../game/engine/gameLog';
 import { soundManager } from '../utils/SoundEffects';
 
 const Overlay = styled.div`
@@ -91,7 +92,7 @@ const GameOverModal: React.FC = () => {
 
   const lastLine = [...state.log].reverse().find((entry) => entry.type === 'error');
   const message = lastLine?.message ?? 'Your run at the table has ended.';
-  const aiSession = !!state.recordFullSessionLog;
+  const canExportLog = hasExportableSessionLog(state);
 
   return (
     <Overlay role="dialog" aria-modal="true" aria-labelledby="game-over-title">
@@ -99,7 +100,7 @@ const GameOverModal: React.FC = () => {
         <Title id="game-over-title">Game Over</Title>
         <Message>{message}</Message>
         <Actions>
-          {aiSession && (
+          {canExportLog && (
             <SecondaryBtn
               type="button"
               onClick={() => {
@@ -109,7 +110,7 @@ const GameOverModal: React.FC = () => {
                 });
               }}
             >
-              Save full session log
+              Save session log
             </SecondaryBtn>
           )}
           <Btn

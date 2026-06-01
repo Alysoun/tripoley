@@ -1,7 +1,7 @@
 import type { GameState } from '../types/GameTypes';
 import { GAME_NAME } from './branding';
 import { summarizeHouseRules } from './engine/houseRules';
-import { sessionLogEntries } from './engine/gameLog';
+import { sessionLogEntries, SESSION_LOG_MAX_BYTES, sessionLogByteSize } from './engine/gameLog';
 
 function formatTimestamp(ms: number | undefined): string {
   if (!ms) return new Date().toISOString();
@@ -22,10 +22,21 @@ export function formatSessionLogText(state: GameState): string {
       : []),
     `Round: ${state.roundNumber}`,
     `Phase: ${state.phase}`,
-    '---',
   ];
 
-  for (const entry of sessionLogEntries(state)) {
+  const entries = sessionLogEntries(state);
+  const logBytes = sessionLogByteSize(entries);
+  if ((state.sessionLogDroppedCount ?? 0) > 0) {
+    lines.push(
+      `Session log: ${entries.length} lines (${Math.round(logBytes / 1024)}KB) — ${state.sessionLogDroppedCount} older line(s) dropped at ${SESSION_LOG_MAX_BYTES / 1024}KB cap`
+    );
+  } else {
+    lines.push(`Session log: ${entries.length} lines (${Math.round(logBytes / 1024)}KB)`);
+  }
+
+  lines.push('---');
+
+  for (const entry of entries) {
     const tag =
       entry.type === 'error' ? '[!]' : entry.type === 'success' ? '[+]' : '   ';
     lines.push(`${tag} ${entry.message}`);
@@ -51,7 +62,7 @@ export function downloadSessionLog(state: GameState): void {
   const anchor = document.createElement('a');
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
   anchor.href = url;
-  anchor.download = `tripoley-ai-${stamp}.txt`;
+  anchor.download = `tripoley-session-${stamp}.txt`;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();

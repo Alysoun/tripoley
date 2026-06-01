@@ -1,5 +1,4 @@
 import {
-  MAX_GAME_LOG_HEIGHT_DESKTOP,
   MAX_GAME_LOG_WIDTH,
   MIN_GAME_LOG_HEIGHT,
   MIN_GAME_LOG_WIDTH,
@@ -48,16 +47,14 @@ export function defaultGameLogLayout(): GameLogLayout {
   };
 }
 
-export function maxGameLogHeight(editing: boolean): number {
+export function maxGameLogHeight(_editing = false): number {
   const h = viewportHeight();
   const top = layoutEditLogTopInset();
-  if (editing) return Math.min(Math.floor(h * 0.85), h - top - 12);
-  return Math.min(MAX_GAME_LOG_HEIGHT_DESKTOP, h - 120);
+  return Math.min(Math.floor(h * 0.85), h - top - 12);
 }
 
-export function maxGameLogWidth(editing: boolean): number {
-  const w = viewportWidth();
-  return editing ? Math.min(MAX_GAME_LOG_WIDTH, w - 16) : 360;
+export function maxGameLogWidth(_editing = false): number {
+  return Math.min(MAX_GAME_LOG_WIDTH, viewportWidth() - 16);
 }
 
 export function minGameLogHeight(editing: boolean, collapsed: boolean): number {
@@ -77,23 +74,22 @@ export function clampGameLogLayout(
     Math.max(MIN_GAME_LOG_WIDTH, layout.width),
     maxGameLogWidth(editing)
   );
-  const height = layout.collapsed
-    ? 40
-    : Math.min(
-        Math.max(minGameLogHeight(editing, false), layout.height),
-        maxGameLogHeight(editing)
-      );
+  /** Persist the expanded height — collapse is display-only and must not wipe slider values. */
+  const expandedHeight = Math.min(
+    Math.max(minGameLogHeight(editing, false), layout.height),
+    maxGameLogHeight(editing)
+  );
   const maxX = Math.max(0, w - width - 8);
   const maxY = editing
     ? Math.max(top, h - layoutEditBottomInset() - 24)
-    : Math.max(top, h - hudSafeAreaBottom() - height);
+    : Math.max(top, h - hudSafeAreaBottom() - (layout.collapsed ? 40 : expandedHeight));
 
   return {
     ...layout,
     x: Math.min(Math.max(0, layout.x), maxX),
     y: Math.min(Math.max(top, layout.y), maxY),
     width,
-    height,
+    height: expandedHeight,
     collapsed: layout.collapsed,
   };
 }
