@@ -56,6 +56,48 @@ describe('poker hand evaluation', () => {
     expect(comparePokerHands(pairAcesKing, pairAcesQueen)).toBeGreaterThan(0);
   });
 
+  it('labels hands with rank detail for transparency', () => {
+    expect(
+      evaluateBestPokerHand([
+        c('hearts', 'K'),
+        c('diamonds', 'K'),
+        c('clubs', '5'),
+        c('spades', '3'),
+        c('hearts', '2'),
+      ]).label
+    ).toBe('Pair of Kings');
+
+    expect(
+      evaluateBestPokerHand([
+        c('hearts', 'K'),
+        c('diamonds', 'K'),
+        c('clubs', '9'),
+        c('spades', '9'),
+        c('hearts', '2'),
+      ]).label
+    ).toBe('Two pair, Kings and Nines');
+
+    expect(
+      evaluateBestPokerHand([
+        c('hearts', 'K'),
+        c('diamonds', 'K'),
+        c('clubs', 'K'),
+        c('spades', '2'),
+        c('hearts', '2'),
+      ]).label
+    ).toBe('Kings full of Twos');
+
+    expect(
+      evaluateBestPokerHand([
+        c('hearts', 'A'),
+        c('hearts', 'K'),
+        c('hearts', 'Q'),
+        c('hearts', 'J'),
+        c('hearts', '9'),
+      ]).label
+    ).toBe('Flush, ace high');
+  });
+
   it('is antisymmetric for unequal hands', () => {
     const strong = evaluateBestPokerHand([
       c('hearts', 'A'),

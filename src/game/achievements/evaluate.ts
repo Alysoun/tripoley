@@ -1,3 +1,4 @@
+import { isPremiumPokerHand, type PokerHandRank } from '../engine/poker';
 import { ACHIEVEMENT_BY_ID, ACHIEVEMENT_DEFINITIONS } from './definitions';
 
 import {
@@ -292,7 +293,9 @@ export function recordPokerWin(
 
   handLabel: string | null,
 
-  opts: { allOpponentsFolded: boolean; ironWillCall: boolean; isShowdown: boolean }
+  opts: { allOpponentsFolded: boolean; ironWillCall: boolean; isShowdown: boolean },
+
+  handRank?: PokerHandRank | null
 
 ): AchievementUnlockEvent[] {
 
@@ -302,10 +305,16 @@ export function recordPokerWin(
     data.stats.largestPokerPot = Math.max(data.stats.largestPokerPot, potTotal);
   }
 
-  if (handLabel && /full house|four of a kind|straight flush|royal flush/i.test(handLabel)) {
+  const premium =
+    handRank != null
+      ? isPremiumPokerHand(handRank)
+      : !!(
+          handLabel &&
+          /full house|four of a kind|straight flush|royal flush|full of/i.test(handLabel)
+        );
 
+  if (premium) {
     data.stats.pokerFullHouseOrBetterWins += 1;
-
   }
 
   if (opts.allOpponentsFolded) data.stats.cleanSweepPokerWins += 1;

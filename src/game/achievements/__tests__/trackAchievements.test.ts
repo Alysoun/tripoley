@@ -4,6 +4,7 @@ import { createEmptyPot } from '../../engine/payCards';
 import { createMichiganState } from '../../engine/michigan';
 import { defaultHouseRules } from '../../engine/houseRules';
 import { initialGameState } from '../../engine/reducer';
+import { getAchievementDisplayProgress } from '../evaluate';
 import { defaultSaveData } from '../storage';
 import {
   applyAchievementTransition,
@@ -171,7 +172,8 @@ describe('applyAchievementTransition', () => {
         roundComplete: false,
         winners: [],
         folded: { 0: false, 1: false, 2: false, 3: false },
-        lastHandLabel: 'Full House',
+        lastHandLabel: 'Kings full of Twos',
+        lastHandRank: 'full-house',
       },
       pot: { ...createEmptyPot(), pot: 30 },
     });
@@ -198,7 +200,8 @@ describe('applyAchievementTransition', () => {
         currentBet: 15,
         playerBets: { 0: 0, 1: 15, 2: 15, 3: 15 },
         folded: { 0: false, 1: false, 2: true, 3: true },
-        lastHandLabel: 'Full House',
+        lastHandLabel: 'Kings full of Twos',
+        lastHandRank: 'full-house',
       },
     };
     const showdownNext = {
@@ -208,7 +211,8 @@ describe('applyAchievementTransition', () => {
         roundComplete: true,
         winners: [HUMAN_ID],
         playerBets: { 0: 15, 1: 15, 2: 15, 3: 15 },
-        lastHandLabel: 'Full House',
+        lastHandLabel: 'Kings full of Twos',
+        lastHandRank: 'full-house',
       },
     };
     const showdownResult = track(showdownPrev, showdownNext);
@@ -357,6 +361,37 @@ describe('applyAchievementTransition', () => {
 
     const result = track(prev, next);
     expect(isAchievementUnlocked(result.data, 'patience_pays')).toBe(true);
+  });
+
+  it('increments michiganWins on second kitty win without a new unlock event', () => {
+    const winPrev = soloGameState({ phase: 'michigan' });
+    const winNext = soloGameState({
+      phase: 'announcement',
+      roundWinnerId: HUMAN_ID,
+      announcement: {
+        title: 'Michigan Rummy — Winner',
+        lines: ['You won'],
+        variant: 'success',
+      },
+    });
+    const afterFirst = defaultSaveData();
+    afterFirst.stats.michiganWins = 1;
+    afterFirst.achievements.kitty_cat.unlockedAt = Date.now();
+
+    const result = applyAchievementTransition(winPrev, winNext, {
+      data: afterFirst,
+      session: createAchievementSessionTracking(),
+      timerSnapshotMs: null,
+    })!;
+
+    expect(result.data.stats.michiganWins).toBe(2);
+    expect(isAchievementUnlocked(result.data, 'kitty_whisperer')).toBe(false);
+    expect(isAchievementUnlocked(result.data, 'kitty_cat')).toBe(true);
+    expect(getAchievementDisplayProgress(result.data, 'kitty_whisperer')).toEqual({
+      current: 2,
+      target: 50,
+      unlocked: false,
+    });
   });
 
   it('does not unlock cool head after a sequence timeout in the same round', () => {

@@ -2,7 +2,9 @@ export type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades';
 export type Rank = 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K';
 
 export type { HouseRules, HouseRulesPreset } from '../game/engine/houseRules';
+export type { PokerHandRank } from '../game/engine/poker';
 export type { SuddenDeathReason, SuddenDeathState } from '../game/engine/suddenDeath';
+import type { PokerHandRank } from '../game/engine/poker';
 import type { HouseRules } from '../game/engine/houseRules';
 import type { SuddenDeathState } from '../game/engine/suddenDeath';
 
@@ -68,6 +70,7 @@ export interface PokerState {
   roundComplete: boolean;
   winners: number[];
   lastHandLabel: string;
+  lastHandRank: PokerHandRank | null;
 }
 
 export interface BlindAuctionState {

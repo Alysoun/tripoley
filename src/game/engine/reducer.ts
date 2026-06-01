@@ -114,6 +114,7 @@ function createInitialPokerState(playerCount: number): PokerState {
     roundComplete: false,
     winners: [],
     lastHandLabel: '',
+    lastHandRank: null,
   };
 }
 
@@ -303,6 +304,9 @@ export function repairLoadedGameSession(state: GameState): GameState {
   if (next.isSoloSession == null && next.players.length > 0) {
     const humanCount = next.players.filter((p) => p.isHuman).length;
     next = { ...next, isSoloSession: humanCount === 1 };
+  }
+  if (next.poker.lastHandRank === undefined) {
+    next = { ...next, poker: { ...next.poker, lastHandRank: null } };
   }
   return next;
 }
@@ -496,6 +500,7 @@ function resolvePokerShowdown(state: GameState): GameState {
         roundComplete: true,
         winners,
         lastHandLabel: bestEval.label,
+        lastHandRank: bestEval.rank,
       },
     },
     log(

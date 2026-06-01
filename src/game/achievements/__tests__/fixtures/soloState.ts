@@ -66,6 +66,7 @@ export function pokerWinTransition(
     potTotal?: number;
     allOpponentsFolded?: boolean;
     handLabel?: string;
+    handRank?: import('../../../engine/poker').PokerHandRank;
     humanCalledBig?: boolean;
   } = {}
 ): GameState {
@@ -88,6 +89,7 @@ export function pokerWinTransition(
       winners,
       folded,
       lastHandLabel: opts.handLabel ?? prev.poker.lastHandLabel,
+      lastHandRank: opts.handRank ?? prev.poker.lastHandRank,
       currentBet: opts.humanCalledBig ? 15 : prev.poker.currentBet,
       playerBets: opts.humanCalledBig
         ? { ...prev.poker.playerBets, [HUMAN_ID]: 15 }

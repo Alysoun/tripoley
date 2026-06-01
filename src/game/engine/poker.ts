@@ -50,6 +50,80 @@ function isStraight(values: number[]): boolean {
   return false;
 }
 
+const RANK_LABEL: Record<number, { singular: string; plural: string }> = {
+  2: { singular: 'Two', plural: 'Twos' },
+  3: { singular: 'Three', plural: 'Threes' },
+  4: { singular: 'Four', plural: 'Fours' },
+  5: { singular: 'Five', plural: 'Fives' },
+  6: { singular: 'Six', plural: 'Sixes' },
+  7: { singular: 'Seven', plural: 'Sevens' },
+  8: { singular: 'Eight', plural: 'Eights' },
+  9: { singular: 'Nine', plural: 'Nines' },
+  10: { singular: 'Ten', plural: 'Tens' },
+  11: { singular: 'Jack', plural: 'Jacks' },
+  12: { singular: 'Queen', plural: 'Queens' },
+  13: { singular: 'King', plural: 'Kings' },
+  14: { singular: 'Ace', plural: 'Aces' },
+};
+
+function rankLabel(value: number, plural = false): string {
+  const entry = RANK_LABEL[value];
+  if (!entry) return String(value);
+  return plural ? entry.plural : entry.singular;
+}
+
+function straightHighRankValue(values: number[]): number {
+  const sorted = [...new Set(values)].sort((a, b) => a - b);
+  if (sorted.length === 5 && sorted.join(',') === '2,3,4,5,14') return 5;
+  return sorted[sorted.length - 1];
+}
+
+function isRoyalStraightValues(values: number[]): boolean {
+  const sorted = [...new Set(values)].sort((a, b) => a - b);
+  return sorted.length === 5 && sorted.join(',') === '10,11,12,13,14';
+}
+
+/** Human-readable winning hand, e.g. "Pair of Kings" or "Kings full of Nines". */
+export function formatPokerHandLabel(
+  rank: PokerHandRank,
+  groups: Array<[number, number]>,
+  values: number[]
+): string {
+  switch (rank) {
+    case 'high-card':
+      return `${rankLabel(values[0])} high`;
+    case 'pair':
+      return `Pair of ${rankLabel(groups[0][0], true)}`;
+    case 'two-pair':
+      return `Two pair, ${rankLabel(groups[0][0], true)} and ${rankLabel(groups[1][0], true)}`;
+    case 'three-of-a-kind':
+      return `Three ${rankLabel(groups[0][0], true)}`;
+    case 'straight': {
+      const high = straightHighRankValue(values);
+      return high === 5 ? 'Straight, five high' : `Straight, ${rankLabel(high).toLowerCase()} high`;
+    }
+    case 'flush':
+      return `Flush, ${rankLabel(values[0]).toLowerCase()} high`;
+    case 'full-house':
+      return `${rankLabel(groups[0][0], true)} full of ${rankLabel(groups[1][0], true)}`;
+    case 'four-of-a-kind':
+      return `Four ${rankLabel(groups[0][0], true)}`;
+    case 'straight-flush':
+      if (isRoyalStraightValues(values)) return 'Royal flush';
+      {
+        const high = straightHighRankValue(values);
+        if (high === 5) return 'Straight flush, five high';
+        return `Straight flush, ${rankLabel(high).toLowerCase()} high`;
+      }
+    default:
+      return 'High card';
+  }
+}
+
+export function isPremiumPokerHand(rank: PokerHandRank): boolean {
+  return RANK_SCORE[rank] >= RANK_SCORE['full-house'];
+}
+
 function evaluateFive(cards: Card[]): PokerHandResult {
   const values = cards.map((c) => rankValue(c.value)).sort((a, b) => b - a);
   const suits = cards.map((c) => c.suit);
@@ -62,33 +136,26 @@ function evaluateFive(cards: Card[]): PokerHandResult {
   const pattern = groups.map(([, c]) => c).join('-');
 
   let rank: PokerHandRank = 'high-card';
-  let label = 'High Card';
 
   if (straight && isFlush) {
     rank = 'straight-flush';
-    label = 'Straight Flush';
   } else if (pattern === '4-1') {
     rank = 'four-of-a-kind';
-    label = 'Four of a Kind';
   } else if (pattern === '3-2') {
     rank = 'full-house';
-    label = 'Full House';
   } else if (isFlush) {
     rank = 'flush';
-    label = 'Flush';
   } else if (straight) {
     rank = 'straight';
-    label = 'Straight';
   } else if (pattern === '3-1-1') {
     rank = 'three-of-a-kind';
-    label = 'Three of a Kind';
   } else if (pattern === '2-2-1') {
     rank = 'two-pair';
-    label = 'Two Pair';
   } else if (pattern === '2-1-1-1') {
     rank = 'pair';
-    label = 'Pair';
   }
+
+  const label = formatPokerHandLabel(rank, groups, values);
 
   return {
     rank,

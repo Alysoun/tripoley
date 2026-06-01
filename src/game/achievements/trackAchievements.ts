@@ -204,11 +204,17 @@ export function applyAchievementTransition(
     const allFolded = next.players.every((p) => p.id === hid || next.poker.folded[p.id]);
     const handLabel = flags.pokerHumanHandLabel || next.poker.lastHandLabel || null;
     unlocks.push(
-      ...recordPokerWin(draft, prev.pot.pot, handLabel, {
-        allOpponentsFolded: allFolded,
-        ironWillCall: flags.pokerHumanCalledBig && !allFolded,
-        isShowdown: !allFolded,
-      })
+      ...recordPokerWin(
+        draft,
+        prev.pot.pot,
+        handLabel,
+        {
+          allOpponentsFolded: allFolded,
+          ironWillCall: flags.pokerHumanCalledBig && !allFolded,
+          isShowdown: !allFolded,
+        },
+        next.poker.lastHandRank
+      )
     );
   }
 

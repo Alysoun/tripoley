@@ -77,6 +77,8 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
 
   const sessionTracking = useRef(createAchievementSessionTracking());
   const adrenalineFreezeMs = useRef(0);
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   const persist = useCallback((next: AchievementSaveData, unlocks: AchievementUnlockEvent[]) => {
     saveAchievementData(next);
@@ -214,22 +216,22 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
   const trackStateTransition = useCallback(
     (prev: GameState, next: GameState) => {
       const result = applyAchievementTransition(prev, next, {
-        data,
+        data: dataRef.current,
         session: sessionTracking.current,
         timerSnapshotMs: readAchievementTimerSnapshot(),
       });
       if (!result) return;
 
       sessionTracking.current = result.session;
+      dataRef.current = result.data;
       if (result.adrenalineFreezeMs > 0) {
         adrenalineFreezeMs.current = result.adrenalineFreezeMs;
         setEffectTick((t) => t + 1);
       }
-      if (result.unlocks.length > 0) {
-        persist(result.data, result.unlocks);
-      }
+      // Persist stat bumps even when no new unlock fires (e.g. kitty_whisperer 2/50).
+      persist(result.data, result.unlocks);
     },
-    [data, persist]
+    [persist]
   );
 
   const value: AchievementContextValue = {
