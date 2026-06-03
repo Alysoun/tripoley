@@ -23,6 +23,10 @@ if (!fs.existsSync(corePkg)) {
 if (!process.env.CI) {
   run('npm run sync-playfield');
 }
+
+// @playfield/core resolves to dist/ (not committed) — must compile before Vitest/Vite.
+run('npm run build --prefix ./playfield');
+
 run('npx vitest run src/game/__tests__/smoke.test.ts src/game/__tests__/playfieldIntegration.test.ts');
 run('npm test');
 run('npm run build');
