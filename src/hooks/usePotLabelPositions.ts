@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState } from 'react';
 import { SectionLabel } from '../types/GameTypes';
-import { LABEL_TO_POT_SECTION } from '../game/engine/animations';
+import { LABEL_TO_POT_SECTION } from '@playfield/core';
 import { POT_SECTION_POSITIONS } from '../components/potLabelLayout';
 import { PotLabelOffsets } from '../components/hudPanelLayout';
 

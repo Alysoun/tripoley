@@ -1,0 +1,39 @@
+{
+  "name": "@playfield/core",
+  "version": "0.1.0",
+  "description": "Headless card-table game engines — Tripoley today, more games tomorrow.",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./tripoley": {
+      "types": "./dist/games/tripoley/index.d.ts",
+      "import": "./dist/games/tripoley/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js"
+    },
+    "./storage": {
+      "types": "./dist/storage/browser.d.ts",
+      "import": "./dist/storage/browser.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:sim": "vitest run src/games/tripoley/__tests__/simulation.test.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,28 +1,30 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { SeatConfig, HouseRules, AIDifficulty } from '../types/GameTypes';
-import { MIN_PLAYERS, MAX_PLAYERS } from '../game/engine/constants';
 import {
+  MIN_PLAYERS,
+  MAX_PLAYERS,
   AI_DIFFICULTY_HINTS,
   AI_DIFFICULTY_LABELS,
   AI_DIFFICULTY_ORDER,
   AiPokerSkillMode,
   applyAiDifficultiesToSeats,
+  StoredAiPokerSettings,
+} from '@playfield/core';
+import {
   loadStoredAiPokerSettings,
   saveStoredAiPokerSettings,
-  StoredAiPokerSettings,
-} from '../game/engine/aiDifficulty';
+} from '@playfield/core/storage';
 import { GAME_NAME, GAME_TAGLINE } from '../game/branding';
 import {
   HOUSE_RULE_PRESETS,
   HOUSE_RULE_TOGGLES,
   HouseRulesPreset,
-  loadStoredHouseRules,
   mergeHouseRules,
   rulesFromPreset,
-  saveHouseRules,
   summarizeHouseRules,
-} from '../game/engine/houseRules';
+} from '@playfield/core';
+import { loadStoredHouseRules, saveHouseRules } from '@playfield/core/storage';
 import {
   loadStoredPlayerName,
   saveStoredPlayerName,

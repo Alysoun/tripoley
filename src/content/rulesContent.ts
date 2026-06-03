@@ -1,10 +1,10 @@
-import { PHASE_LABELS } from '../game/engine/constants';
+import { PHASE_LABELS } from '@playfield/core';
 import {
   HOUSE_RULE_PRESETS,
   HOUSE_RULE_TOGGLES,
   HouseRules,
   summarizeHouseRules,
-} from '../game/engine/houseRules';
+} from '@playfield/core';
 import type { GamePhase } from '../types/GameTypes';
 
 export type RulesSection = {

@@ -1,4 +1,4 @@
-import { isPremiumPokerHand, type PokerHandRank } from '../engine/poker';
+import { isPremiumPokerHand, type PokerHandRank } from '@playfield/core';
 import { ACHIEVEMENT_BY_ID, ACHIEVEMENT_DEFINITIONS } from './definitions';
 
 import {

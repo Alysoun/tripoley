@@ -1,8 +1,11 @@
-import { createCard } from '../../../engine/cards';
-import { createEmptyPot } from '../../../engine/payCards';
-import { createMichiganState } from '../../../engine/michigan';
-import { defaultHouseRules } from '../../../engine/houseRules';
-import { gameReducer, initialGameState } from '../../../engine/reducer';
+import {
+  createCard,
+  createEmptyPot,
+  createMichiganState,
+  defaultHouseRules,
+  gameReducer,
+  initialGameState,
+} from '@playfield/core';
 import type { Card, GameState, Player } from '../../../../types/GameTypes';
 
 const SOLO_HUMAN_ID = 0;
@@ -66,7 +69,7 @@ export function pokerWinTransition(
     potTotal?: number;
     allOpponentsFolded?: boolean;
     handLabel?: string;
-    handRank?: import('../../../engine/poker').PokerHandRank;
+    handRank?: import('@playfield/core').PokerHandRank;
     humanCalledBig?: boolean;
   } = {}
 ): GameState {

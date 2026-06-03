@@ -1,5 +1,5 @@
 import type { GameState } from '../types/GameTypes';
-import { initialGameState, repairLoadedGameSession } from './engine/reducer';
+import { initialGameState, repairLoadedGameSession } from '@playfield/core';
 
 /** Persists in-progress games across browser restarts (localStorage). */
 const STORAGE_KEY = 'tripoley-active-session';

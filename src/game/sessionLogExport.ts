@@ -1,7 +1,11 @@
 import type { GameState } from '../types/GameTypes';
 import { GAME_NAME } from './branding';
-import { summarizeHouseRules } from './engine/houseRules';
-import { sessionLogEntries, SESSION_LOG_MAX_BYTES, sessionLogByteSize } from './engine/gameLog';
+import {
+  summarizeHouseRules,
+  sessionLogEntries,
+  SESSION_LOG_MAX_BYTES,
+  sessionLogByteSize,
+} from '@playfield/core';
 
 function formatTimestamp(ms: number | undefined): string {
   if (!ms) return new Date().toISOString();

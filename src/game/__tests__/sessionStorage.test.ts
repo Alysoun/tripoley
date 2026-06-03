@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { initialGameState } from '../engine/reducer';
+import { initialGameState } from '@playfield/core';
 import { clearGameSession, loadGameSession, saveGameSession } from '../sessionStorage';
 
 describe('game session persistence', () => {

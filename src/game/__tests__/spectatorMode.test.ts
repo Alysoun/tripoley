@@ -7,7 +7,7 @@ import {
   isSpectatorUnlocked,
   resetKonamiProgress,
 } from '../spectatorMode';
-import { initialGameState } from '../engine/reducer';
+import { initialGameState } from '@playfield/core';
 
 describe('spectatorMode', () => {
   beforeEach(() => {

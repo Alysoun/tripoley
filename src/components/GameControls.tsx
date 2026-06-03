@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useGame } from '../context/GameContext';
-import { PHASE_LABELS } from '../game/engine/constants';
+import { PHASE_LABELS } from '@playfield/core';
 import { displayPlayerName } from '../utils/playerName';
 import { useGameEffects } from '../hooks/useGameEffects';
 import { useAchievements } from '../context/AchievementContext';

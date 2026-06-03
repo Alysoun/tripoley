@@ -16,8 +16,7 @@ import {
   recordSwiftLead,
 } from './evaluate';
 import { AchievementSaveData, AchievementUnlockEvent } from './types';
-import { rankValue } from '../engine/cards';
-import { describePayCardsHeld } from '../engine/payCards';
+import { rankValue, describePayCardsHeld } from '@playfield/core';
 
 export interface AchievementRoundFlags {
   sequenceTimedOut: boolean;

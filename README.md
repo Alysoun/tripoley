@@ -28,7 +28,11 @@ npm run test:watch    # re-run on file changes
 npm run test:sim      # simulation / stress tests only
 ```
 
-Tests live in `src/game/engine/__tests__/`. CI runs `npm test` before every GitHub Pages deploy.
+Game logic lives in **`@playfield/core`** (vendored under [`playfield/`](playfield/packages/core)). See [`docs/PLAYFIELD.md`](docs/PLAYFIELD.md). After editing the canonical SDK at `Games/playfield/`, run `npm run sync-playfield` before commit.
+
+Tripoley tests cover achievements, session storage, Playfield integration, and UI helpers. Engine unit tests and full-table simulations: `npm run test:sim`.
+
+CI runs `npm test` before every GitHub Pages deploy.
 
 To stress-test more seeds locally, duplicate the loop in `simulation.test.ts` or raise `maxRounds` in `simulateGame()`.
 
@@ -69,7 +73,7 @@ npm run deploy
 
 ## Notes
 
-- AI opponents run entirely in the browser (`src/game/engine/ai.ts`). No backend required.
+- AI opponents run entirely in the browser (`@playfield/core`). No backend required.
 - Game progress is saved in `localStorage` until you **Leave Table** or reach **Game Over**; layout prefs also use `localStorage`.
 
 ## Asset credits

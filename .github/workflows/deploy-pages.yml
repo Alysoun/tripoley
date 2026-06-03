@@ -29,7 +29,14 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
+      - name: Verify Playfield SDK is vendored
+        run: test -f playfield/packages/core/package.json
+
+      - name: Install Playfield dependencies
+        working-directory: playfield
+        run: npm ci
+
+      - name: Install Tripoley dependencies
         run: npm ci
 
       - name: Run tests

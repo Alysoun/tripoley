@@ -1,0 +1,12 @@
+{
+  "name": "playfield",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Playfield — multi-game card-table SDK monorepo",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "npm run build -w @playfield/core",
+    "test": "npm run test -w @playfield/core",
+    "test:sim": "npm run test:sim -w @playfield/core"
+  }
+}

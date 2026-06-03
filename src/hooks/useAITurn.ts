@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useGame } from '../context/GameContext';
 import { useSoloGamePaused } from '../context/SoloPauseUiContext';
 import { debugAiTurnDelayMs } from '../debugConfig';
-import { getLegalMichiganPlays, canPassLead } from '../game/engine/michigan';
+import { getLegalMichiganPlays, canPassLead } from '@playfield/core';
 import { GameState } from '../types/GameTypes';
 
 function shouldRunAITurn(state: GameState): boolean {

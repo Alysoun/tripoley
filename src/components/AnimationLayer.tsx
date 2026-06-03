@@ -6,7 +6,7 @@ import { useAchievements } from '../context/AchievementContext';
 import { AnimationType, Rank } from '../types/GameTypes';
 import { getCardFrontPath, getCardBackPath } from '../utils/cardAssets';
 import { anchorCenter, potSectionFromAnchor } from '../utils/animationAnchors';
-import { pulsePotSection } from '../game/engine/animations';
+import { pulsePotSection } from '@playfield/core';
 import { soundManager } from '../utils/SoundEffects';
 import { debugSkipAnimations } from '../debugConfig';
 

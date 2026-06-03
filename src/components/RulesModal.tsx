@@ -7,7 +7,7 @@ import {
   RULES_OVERVIEW,
   RULES_SECTIONS,
 } from '../content/rulesContent';
-import type { HouseRules } from '../game/engine/houseRules';
+import type { HouseRules } from '@playfield/core';
 import type { GamePhase } from '../types/GameTypes';
 
 const Overlay = styled.div`

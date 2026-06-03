@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { PotSection, SectionLabel } from '../types/GameTypes';
-import { LABEL_TO_POT_SECTION } from '../game/engine/animations';
+import { LABEL_TO_POT_SECTION } from '@playfield/core';
 import { POT_DISPLAY_SIZE, potSectionAnchorPercent } from './potLabelLayout';
 import { publicAsset } from '../utils/publicAsset';
 

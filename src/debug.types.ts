@@ -1,4 +1,4 @@
-import type { HouseRulesPreset } from './game/engine/houseRules';
+import type { HouseRulesPreset } from '@playfield/core';
 
 /** Optional auto-start from the setup screen (dev only). */
 export interface DebugAutoStart {

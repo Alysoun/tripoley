@@ -1,9 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useGame } from '../context/GameContext';
-import { canPassLead, leadColorLabel } from '../game/engine/michigan';
-import { describePayCardsHeld } from '../game/engine/payCards';
-import { isEliminated } from '../game/engine/playerStatus';
+import { canPassLead, leadColorLabel, describePayCardsHeld, isEliminated } from '@playfield/core';
 import { useAchievements } from '../context/AchievementContext';
 import { displayPlayerName } from '../utils/playerName';
 

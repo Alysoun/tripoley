@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createCard } from '../../engine/cards';
-import { createEmptyPot } from '../../engine/payCards';
-import { createMichiganState } from '../../engine/michigan';
-import { defaultHouseRules } from '../../engine/houseRules';
-import { initialGameState } from '../../engine/reducer';
+import {
+  createCard,
+  createEmptyPot,
+  createMichiganState,
+  defaultHouseRules,
+  initialGameState,
+} from '@playfield/core';
 import { getAchievementDisplayProgress } from '../evaluate';
 import { defaultSaveData } from '../storage';
 import {

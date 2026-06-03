@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import styled, { css, keyframes } from 'styled-components';
 import Draggable from 'react-draggable';
 import { PotSection, SectionLabel } from '../types/GameTypes';
-import { LABEL_TO_POT_SECTION } from '../game/engine/animations';
+import { LABEL_TO_POT_SECTION } from '@playfield/core';
 import { useAchievements } from '../context/AchievementContext';
 import { useHudLayout } from '../context/HudLayoutContext';
 import { POT_SECTION_POSITIONS } from './potLabelLayout';
@@ -205,8 +205,8 @@ const PotChipLabels: React.FC<PotChipLabelsProps> = ({ sections }) => {
         window.setTimeout(() => setPulseSection(null), 350);
       }
     };
-    window.addEventListener('tripoley-pot-pulse', handler);
-    return () => window.removeEventListener('tripoley-pot-pulse', handler);
+    window.addEventListener('playfield-pot-pulse', handler);
+    return () => window.removeEventListener('playfield-pot-pulse', handler);
   }, []);
 
   const chipByLabel = new Map(sections.map((s) => [s.label, s.chips]));

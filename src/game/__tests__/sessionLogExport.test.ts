@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatSessionLogText } from '../sessionLogExport';
-import { initialGameState } from '../engine/reducer';
+import { initialGameState } from '@playfield/core';
 
 describe('sessionLogExport', () => {
   it('formats full session log with header and entries', () => {

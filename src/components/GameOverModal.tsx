@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { useGame } from '../context/GameContext';
 import { downloadSessionLog } from '../game/sessionLogExport';
-import { hasExportableSessionLog } from '../game/engine/gameLog';
+import { hasExportableSessionLog } from '@playfield/core';
 import { soundManager } from '../utils/SoundEffects';
 
 const Overlay = styled.div`

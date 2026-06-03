@@ -15,7 +15,7 @@ import {
   getActionTimerHint,
   getPlayerActionTimerKey,
   getPlayerActionTimerMs,
-} from '../game/engine/playerActionTimer';
+} from '@playfield/core';
 import { setAchievementTimerSnapshot } from '../game/achievements/timerSnapshot';
 
 export interface PlayerActionTimerState {

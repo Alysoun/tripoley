@@ -7,7 +7,7 @@ import {
   copySessionLogToClipboard,
   downloadSessionLog,
 } from '../game/sessionLogExport';
-import { sessionLogEntries, hasExportableSessionLog } from '../game/engine/gameLog';
+import { sessionLogEntries, hasExportableSessionLog } from '@playfield/core';
 import {
   gameLogDragBounds,
   maxGameLogHeight,

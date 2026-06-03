@@ -1,8 +1,6 @@
 import { createContext, useContext, useReducer, ReactNode, useCallback, useRef, useEffect } from 'react';
 import { GameState, GameAction, PokerAction } from '../types/GameTypes';
-import { gameReducer, initialGameState } from '../game/engine/reducer';
-import { finalizePlayerStatus } from '../game/engine/playerStatus';
-import { getAIAction } from '../game/engine/ai';
+import { gameReducer, initialGameState, finalizePlayerStatus, getAIAction } from '@playfield/core';
 import { clearGameSession, loadGameSession, saveGameSession } from '../game/sessionStorage';
 import { debugLogActions } from '../debugConfig';
 

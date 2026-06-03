@@ -7,14 +7,14 @@ import { getCardFrontPath, getCardBackPath } from '../utils/cardAssets';
 import {
   getLegalMichiganPlays,
   describeMichiganTurn,
-} from '../game/engine/michigan';
+} from '@playfield/core';
 import {
   arrangeForPokerDisplay,
   sortForMichiganHand,
   sortByRank,
   bumpRedSuitsForward,
   sameCardOrder,
-} from '../game/engine/handDisplay';
+} from '../game/handDisplay';
 import Chip from './Chip';
 import PlayerActionBar from './PlayerActionBar';
 import TurnTimerDisplay from './TurnTimerDisplay';

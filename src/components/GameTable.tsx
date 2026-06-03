@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useGame } from '../context/GameContext';
-import { validateMichiganPlay } from '../game/engine/michigan';
+import { validateMichiganPlay } from '@playfield/core';
 import { useAchievements } from '../context/AchievementContext';
 import { SeatConfig, HouseRules } from '../types/GameTypes';
 import TripoleyPot from './TripoleyPot';
@@ -18,7 +18,7 @@ import { useGameSounds } from '../hooks/useGameSounds';
 import { useAITurn } from '../hooks/useAITurn';
 import { useSpectatorAutoPlay } from '../hooks/useSpectatorAutoPlay';
 import { useAchievementTracking } from '../hooks/useAchievementTracking';
-import { potBoardToDisplaySections } from '../game/engine/reducer';
+import { potBoardToDisplaySections } from '@playfield/core';
 import SeatAnchors from './SeatAnchors';
 import SeatLabels from './SeatLabels';
 import { TABLE_BOTTOM_INSET, TABLE_BOTTOM_INSET_PHONE, TABLE_BOTTOM_INSET_TABLET } from './hudLayout';
@@ -26,7 +26,8 @@ import LayoutEditOverlay from './LayoutEditOverlay';
 import { HudLayoutProvider, useHudLayout } from '../context/HudLayoutContext';
 import { SoloPauseUiProvider } from '../context/SoloPauseUiContext';
 import { DEBUG, isDebugActive } from '../debugConfig';
-import { rulesFromPreset, defaultHouseRules } from '../game/engine/houseRules';
+import { rulesFromPreset, defaultHouseRules } from '@playfield/core';
+import { syncPlayfieldFromDebug } from '../playfieldClient';
 
 import type { FeltColor } from '../game/achievements/types';
 
@@ -226,6 +227,7 @@ const GameTableContent: React.FC = () => {
     if (!auto?.enabled) return;
 
     debugAutoStarted.current = true;
+    syncPlayfieldFromDebug();
     const seats: SeatConfig[] = Array.from({ length: auto.playerCount }, (_, i) => ({
       isHuman: auto.humanSeats.includes(i),
     }));
@@ -280,6 +282,7 @@ const GameTableContent: React.FC = () => {
   );
 
   const handleStartGame = (seats: SeatConfig[], houseRules: HouseRules) => {
+    syncPlayfieldFromDebug();
     dispatch(startGameAction(seats, houseRules));
   };
 
