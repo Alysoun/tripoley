@@ -98,6 +98,13 @@ public/assets/cards
 # Local dev overrides (copy src/debug.example.ts → src/debug.ts)
 src/debug.ts
 
+# Legacy prototype merge (do not re-add)
+merged_from_rummy_royal/
+
+# Vendored Playfield SDK build output (CI builds fresh)
+playfield/packages/core/dist/
+playfield/node_modules/
+
 # Gatsby files
 .cache/
 # Comment in the public line in if your project uses Gatsby and not Next.js

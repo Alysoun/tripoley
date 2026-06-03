@@ -23,6 +23,7 @@ You cannot manually play every combination (player counts × deals × actions is
 - **Seeded RNG** — reproducible runs (`mockRandom(seed)` in tests)
 
 ```bash
+npm run smoke         # pre-push: sync SDK, tests, production build
 npm test              # full suite (~1s locally)
 npm run test:watch    # re-run on file changes
 npm run test:sim      # simulation / stress tests only
@@ -32,7 +33,7 @@ Game logic lives in **`@playfield/core`** (vendored under [`playfield/`](playfie
 
 Tripoley tests cover achievements, session storage, Playfield integration, and UI helpers. Engine unit tests and full-table simulations: `npm run test:sim`.
 
-CI runs `npm test` before every GitHub Pages deploy.
+CI runs `npm run smoke` before every GitHub Pages deploy.
 
 To stress-test more seeds locally, duplicate the loop in `simulation.test.ts` or raise `maxRounds` in `simulateGame()`.
 
@@ -78,4 +79,4 @@ npm run deploy
 
 ## Asset credits
 
-- **Cat walk animation (achievement perk)**: FrolicForge — `https://frolicforge.itch.io/cat-animation-high-res`
+- **Cat walk animation (achievement perk)**: FrolicForge — `https://frolicforge.itch.io/cat-animation-high-res` (sprites in `public/assets/animation/cat_walk_512x512_12frames_spritesheet_v2_*.png`)

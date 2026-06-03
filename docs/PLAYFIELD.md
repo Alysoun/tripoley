@@ -25,11 +25,12 @@ npm install
 
 ## Before pushing to GitHub
 
-1. Sync SDK: `node scripts/sync-playfield-sdk.mjs`
-2. `npm test` (Tripoley + embedded Playfield build)
-3. Commit changes under `playfield/` when engine code changed
+```bash
+npm run sync-playfield   # when you edited Games/playfield/
+npm run smoke            # tests + production build
+```
 
-CI builds `playfield/` then Tripoley; it does **not** use `../playfield`.
+Commit `playfield/` when engine source changed. CI runs the same `npm run smoke` gate (without re-syncing from a sibling folder).
 
 ## Engine tests
 

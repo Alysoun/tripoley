@@ -19,7 +19,10 @@ if (!fs.existsSync(corePkg)) {
   process.exit(1);
 }
 
-run('npm run sync-playfield');
+// Skip self-copy on CI; vendored playfield/ is already in the checkout.
+if (!process.env.CI) {
+  run('npm run sync-playfield');
+}
 run('npx vitest run src/game/__tests__/smoke.test.ts src/game/__tests__/playfieldIntegration.test.ts');
 run('npm test');
 run('npm run build');

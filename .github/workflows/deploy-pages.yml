@@ -39,11 +39,8 @@ jobs:
       - name: Install Tripoley dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
-
-      - name: Build for GitHub Pages
-        run: npm run build
+      - name: Smoke test and production build
+        run: npm run smoke
 
       - name: Verify GitHub Pages build output
         run: grep -q '/tripoley/assets/' dist/index.html
