@@ -77,6 +77,24 @@ describe('session storage + core repair', () => {
     vi.unstubAllGlobals();
   });
 
+  it('repairLoadedGameSession fixes duplicate log ids from a stale counter', () => {
+    const live = gameReducer(initialGameState, {
+      type: 'START_GAME',
+      seats: Array.from({ length: 4 }, () => ({ isHuman: false })),
+      houseRules: rulesFromPreset('official'),
+    });
+    const corrupted = {
+      ...live,
+      log: [
+        ...live.log,
+        { id: 'log-1', message: 'duplicate from HMR', type: 'info' as const },
+      ],
+    };
+    const repaired = repairLoadedGameSession(corrupted);
+    const ids = repaired.log.map((e) => e.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it('round-trips an in-progress session', () => {
     const live = gameReducer(initialGameState, {
       type: 'START_GAME',

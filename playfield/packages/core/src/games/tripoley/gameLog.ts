@@ -10,6 +10,49 @@ export function resetLogCounter(): void {
   logCounter = 0;
 }
 
+function maxNumericLogId(entries: Iterable<GameLogEntry>): number {
+  let max = 0;
+  for (const entry of entries) {
+    const match = /^log-(\d+)$/.exec(entry.id);
+    if (match) max = Math.max(max, Number.parseInt(match[1], 10));
+  }
+  return max;
+}
+
+/** Align the module counter with ids already present (saved sessions, HMR). */
+export function adoptLogCounterFromState(state: GameState): void {
+  const maxId = maxNumericLogId([...state.log, ...(state.sessionLog ?? [])]);
+  logCounter = Math.max(logCounter, maxId);
+}
+
+/** Re-id duplicate log lines so React keys stay unique after reload or HMR. */
+export function ensureUniqueLogIds(state: GameState): GameState {
+  const seen = new Set<string>();
+  let nextNum = logCounter;
+
+  const reid = (entries: GameLogEntry[]): GameLogEntry[] =>
+    entries.map((entry) => {
+      const numeric = /^log-(\d+)$/.exec(entry.id);
+      if (numeric) nextNum = Math.max(nextNum, Number.parseInt(numeric[1], 10));
+
+      if (!seen.has(entry.id)) {
+        seen.add(entry.id);
+        return entry;
+      }
+
+      nextNum += 1;
+      const id = `log-${nextNum}`;
+      seen.add(id);
+      return { ...entry, id };
+    });
+
+  logCounter = nextNum;
+  const log = reid(state.log);
+  const sessionLog = state.sessionLog ? reid(state.sessionLog) : state.sessionLog;
+  if (sessionLog === state.sessionLog && log === state.log) return state;
+  return { ...state, log, sessionLog };
+}
+
 export function createLogEntry(
   message: string,
   type: GameLogEntry['type'] = 'info'

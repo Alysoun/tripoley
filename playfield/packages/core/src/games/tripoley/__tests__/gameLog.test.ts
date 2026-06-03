@@ -2,6 +2,9 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import type { GameLogEntry, GameState } from '../types';
 import {
   appendSessionLogFifo,
+  adoptLogCounterFromState,
+  createLogEntry,
+  ensureUniqueLogIds,
   pushLogMessage,
   resetLogCounter,
   sessionLogByteSize,
@@ -39,6 +42,33 @@ describe('gameLog', () => {
     let state: GameState = { ...initialGameState, log: [] };
     state = pushLogMessage(state, 'setup noise');
     expect(state.sessionLog).toBeUndefined();
+  });
+
+  it('adopts counter after reload so new lines do not reuse ids', () => {
+    resetLogCounter();
+    const restored = gameWithSessionLog();
+    restored.log = [
+      { id: 'log-12', message: 'saved', type: 'info' },
+      { id: 'log-8', message: 'older', type: 'info' },
+    ];
+    adoptLogCounterFromState(restored);
+    const next = createLogEntry('fresh');
+    expect(next.id).toBe('log-13');
+  });
+
+  it('re-ids duplicate log keys in restored state', () => {
+    resetLogCounter();
+    const dupes = gameWithSessionLog();
+    dupes.log = [
+      { id: 'log-3', message: 'a', type: 'info' },
+      { id: 'log-3', message: 'b', type: 'info' },
+      { id: 'log-4', message: 'c', type: 'info' },
+    ];
+    const fixed = ensureUniqueLogIds(dupes);
+    const ids = fixed.log.map((e) => e.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids[0]).toBe('log-3');
+    expect(ids[1]).not.toBe('log-3');
   });
 
   it('drops oldest session lines at the byte cap (FIFO)', () => {

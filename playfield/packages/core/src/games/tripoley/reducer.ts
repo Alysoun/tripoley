@@ -73,7 +73,13 @@ import {
   chipFromPotToPlayer,
   dealAnimationsForRound,
 } from './animations';
-import { createLogEntry, pushLog, resetLogCounter } from './gameLog';
+import {
+  createLogEntry,
+  pushLog,
+  resetLogCounter,
+  adoptLogCounterFromState,
+  ensureUniqueLogIds,
+} from './gameLog';
 import { playfieldStartingChips } from '../../config';
 import {
   ANTE_SECTION_COUNT,
@@ -312,7 +318,8 @@ export function repairLoadedGameSession(state: GameState): GameState {
   if (next.poker.lastHandRank === undefined) {
     next = { ...next, poker: { ...next.poker, lastHandRank: null } };
   }
-  return next;
+  adoptLogCounterFromState(next);
+  return ensureUniqueLogIds(next);
 }
 
 function startPayCardsPhase(state: GameState): GameState {
