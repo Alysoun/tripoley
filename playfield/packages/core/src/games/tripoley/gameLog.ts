@@ -1,8 +1,6 @@
 import type { GameLogEntry, GameState } from './types';
 
 export const UI_LOG_CAP = 40;
-/** Rolling session buffer for export/debug — oldest lines drop first (FIFO). */
-export const SESSION_LOG_MAX_BYTES = 512 * 1024;
 
 let logCounter = 0;
 
@@ -69,22 +67,15 @@ export function sessionLogByteSize(entries: GameLogEntry[]): number {
   return entries.reduce((sum, entry) => sum + sessionLogEntryBytes(entry), 0);
 }
 
-/** Append one line and drop oldest entries until under the byte cap. */
+/** Append one line to the full session export log (no size cap). */
 export function appendSessionLogFifo(
   sessionLog: GameLogEntry[] | undefined,
-  entry: GameLogEntry,
-  maxBytes = SESSION_LOG_MAX_BYTES
+  entry: GameLogEntry
 ): { sessionLog: GameLogEntry[]; dropped: number } {
-  let log = [...(sessionLog ?? []), entry];
-  let dropped = 0;
-  while (log.length > 1 && sessionLogByteSize(log) > maxBytes) {
-    log.shift();
-    dropped += 1;
-  }
-  return { sessionLog: log, dropped };
+  return { sessionLog: [...(sessionLog ?? []), entry], dropped: 0 };
 }
 
-/** Rolling UI log; session export log capped at SESSION_LOG_MAX_BYTES. */
+/** Rolling UI log; full session history kept for export. */
 export function pushLog(state: GameState, entry: GameLogEntry): GameState {
   const uiLog = [...state.log.slice(-(UI_LOG_CAP - 1)), entry];
 
@@ -92,12 +83,12 @@ export function pushLog(state: GameState, entry: GameLogEntry): GameState {
     return { ...state, log: uiLog };
   }
 
-  const { sessionLog, dropped } = appendSessionLogFifo(state.sessionLog, entry);
+  const { sessionLog } = appendSessionLogFifo(state.sessionLog, entry);
   return {
     ...state,
     log: uiLog,
     sessionLog,
-    sessionLogDroppedCount: (state.sessionLogDroppedCount ?? 0) + dropped,
+    sessionLogDroppedCount: 0,
   };
 }
 

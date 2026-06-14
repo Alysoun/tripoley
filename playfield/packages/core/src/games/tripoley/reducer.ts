@@ -699,7 +699,7 @@ function handlePokerAction(
   amount = 0
 ): GameState {
   const player = state.players[state.currentPlayer];
-  if (!player || isEliminated(player)) return state;
+  if (!player || isEliminated(player)) return fixPokerTurnIfStuck(state);
   if (state.poker.folded[player.id]) {
     return advancePokerTurn(state);
   }
@@ -708,19 +708,22 @@ function handlePokerAction(
   let players = [...state.players];
   let pot = clonePot(state.pot);
   let next = state;
+  let resolvedAction = action;
 
   if (action === 'fold') {
-    if (shouldForceAllInPoker(state)) return state;
-    poker.folded[player.id] = true;
-    next = appendLog({ ...state, poker }, log(`${logPlayerName(player)} folds`, 'info'));
-    return advancePokerTurn(next);
+    if (shouldForceAllInPoker(state)) {
+      resolvedAction = 'call';
+    } else {
+      poker.folded[player.id] = true;
+      next = appendLog({ ...state, poker }, log(`${logPlayerName(player)} folds`, 'info'));
+      return advancePokerTurn(next);
+    }
   }
 
   const currentBet = poker.playerBets[player.id] || 0;
   let toPay = 0;
-  let resolvedAction = action;
 
-  if (action === 'check') {
+  if (resolvedAction === 'check') {
     if (poker.currentBet > currentBet) {
       if (player.chips <= 0) {
         poker.folded[player.id] = true;
@@ -731,6 +734,8 @@ function handlePokerAction(
       toPay = Math.min(poker.currentBet - currentBet, player.chips);
     }
   } else if (action === 'call') {
+    toPay = poker.currentBet - currentBet;
+  } else if (resolvedAction === 'call') {
     toPay = poker.currentBet - currentBet;
   } else if (action === 'bet' || action === 'raise') {
     const raiseTo = action === 'bet' ? amount : poker.currentBet + amount;

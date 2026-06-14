@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useGame } from '../context/GameContext';
 import { useSoloGamePaused } from '../context/SoloPauseUiContext';
 import { debugAiTurnDelayMs } from '../debugConfig';
-import { getLegalMichiganPlays, canPassLead } from '@playfield/core';
+import { getLegalMichiganPlays, canPassLead, isEliminated } from '@playfield/core';
 import { GameState } from '../types/GameTypes';
 
 function shouldRunAITurn(state: GameState): boolean {
@@ -43,7 +43,7 @@ function runAITurnSync(
     }
   }
 
-  if (state.phase === 'poker' && state.poker.folded[current.id]) {
+  if (state.phase === 'poker' && (state.poker.folded[current.id] || isEliminated(current))) {
     dispatch({ type: 'POKER_SYNC_TURN' });
     return;
   }
@@ -89,7 +89,7 @@ export function useAITurn() {
       }
     }
 
-    if (state.phase === 'poker' && state.poker.folded[current.id]) {
+    if (state.phase === 'poker' && (state.poker.folded[current.id] || isEliminated(current))) {
       dispatch({ type: 'POKER_SYNC_TURN' });
       return;
     }

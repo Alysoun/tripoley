@@ -7,9 +7,7 @@ import {
   ensureUniqueLogIds,
   pushLogMessage,
   resetLogCounter,
-  sessionLogByteSize,
   sessionLogEntries,
-  SESSION_LOG_MAX_BYTES,
   UI_LOG_CAP,
 } from '../gameLog';
 import { initialGameState } from '../reducer';
@@ -71,10 +69,9 @@ describe('gameLog', () => {
     expect(ids[1]).not.toBe('log-3');
   });
 
-  it('drops oldest session lines at the byte cap (FIFO)', () => {
+  it('keeps the full session log for export (no byte cap)', () => {
     const big = 'x'.repeat(4000);
     let sessionLog: GameLogEntry[] = [];
-    let dropped = 0;
 
     for (let i = 0; i < 200; i += 1) {
       const result = appendSessionLogFifo(sessionLog, {
@@ -83,12 +80,11 @@ describe('gameLog', () => {
         type: 'info',
       });
       sessionLog = result.sessionLog;
-      dropped += result.dropped;
+      expect(result.dropped).toBe(0);
     }
 
-    expect(sessionLogByteSize(sessionLog)).toBeLessThanOrEqual(SESSION_LOG_MAX_BYTES);
-    expect(sessionLog.length).toBeLessThan(200);
-    expect(dropped).toBeGreaterThan(0);
-    expect(Number(sessionLog[0]?.message.split('-').pop())).toBeGreaterThan(0);
+    expect(sessionLog.length).toBe(200);
+    expect(sessionLog[0]?.message).toBe(`${big}-0`);
+    expect(sessionLog[199]?.message).toBe(`${big}-199`);
   });
 });

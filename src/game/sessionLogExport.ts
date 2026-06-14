@@ -3,7 +3,6 @@ import { GAME_NAME } from './branding';
 import {
   summarizeHouseRules,
   sessionLogEntries,
-  SESSION_LOG_MAX_BYTES,
   sessionLogByteSize,
 } from '@playfield/core';
 
@@ -30,13 +29,7 @@ export function formatSessionLogText(state: GameState): string {
 
   const entries = sessionLogEntries(state);
   const logBytes = sessionLogByteSize(entries);
-  if ((state.sessionLogDroppedCount ?? 0) > 0) {
-    lines.push(
-      `Session log: ${entries.length} lines (${Math.round(logBytes / 1024)}KB) — ${state.sessionLogDroppedCount} older line(s) dropped at ${SESSION_LOG_MAX_BYTES / 1024}KB cap`
-    );
-  } else {
-    lines.push(`Session log: ${entries.length} lines (${Math.round(logBytes / 1024)}KB)`);
-  }
+  lines.push(`Session log: ${entries.length} lines (${Math.round(logBytes / 1024)}KB)`);
 
   lines.push('---');
 

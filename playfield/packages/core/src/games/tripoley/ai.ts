@@ -2,6 +2,8 @@ import { GameState, Player, Card, PokerAction, AIDifficulty } from './types';
 import { getLegalMichiganPlays, canPassLead } from './michigan';
 import { estimateHandStrength, evaluateBestPokerHand } from './poker';
 import { handHasPayCard } from './payCards';
+import { isEliminated } from './playerStatus';
+import { shouldForceAllInPoker } from './suddenDeath';
 
 export type DealerBlindChoice = 'swap' | 'auction' | 'keep';
 
@@ -136,6 +138,10 @@ export function decidePokerAction(player: Player, state: GameState): PokerAction
 
   if (state.poker.folded[player.id]) return 'fold';
 
+  if (shouldForceAllInPoker(state)) {
+    return toCall > 0 ? 'call' : 'check';
+  }
+
   if (toCall === 0) {
     if (shouldValueBet(rank, rolls, profile)) return 'bet';
     if (shouldBluff(player, state, toCall, rolls, false)) return 'bet';
@@ -227,6 +233,9 @@ export function getAIAction(state: GameState): { type: string; payload?: Record<
     }
 
     case 'poker': {
+      if (state.poker.folded[player.id] || state.poker.roundComplete || isEliminated(player)) {
+        return { type: 'POKER_SYNC_TURN' };
+      }
       const action = decidePokerAction(player, state);
       if (action === 'bet' || action === 'raise') {
         return {
